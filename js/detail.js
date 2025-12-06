@@ -5,10 +5,15 @@ let imageRotation = 0;
 let imageScale = 1;
 let isDragging = false;
 let startX, startY, scrollLeft, scrollTop;
+let tagsData = []; // 存储标签数据
 
 // 初始化详情页面
 document.addEventListener('DOMContentLoaded', async function() {
     setupMobileMenu();
+    setupNavigationLinks(); // 添加导航链接设置
+    
+    // 加载标签数据
+    await loadTagsData();
     
     // 确保数据已加载
     if (typeof buildingsData === 'undefined' || buildingsData.length === 0) {
@@ -18,6 +23,59 @@ document.addEventListener('DOMContentLoaded', async function() {
     loadWorkDetail();
     loadRelatedWorks();
 });
+
+// 设置导航链接
+function setupNavigationLinks() {
+    const navLinks = document.querySelectorAll('.nav-link');
+    navLinks.forEach(link => {
+        // 移除可能存在的事件监听器
+        link.replaceWith(link.cloneNode(true));
+    });
+    
+    // 重新获取链接并添加点击事件
+    const freshNavLinks = document.querySelectorAll('.nav-link');
+    freshNavLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            console.log('导航链接被点击:', this.href);
+            // 确保链接可以正常跳转
+            window.location.href = this.href;
+        });
+    });
+}
+
+// 加载标签数据
+async function loadTagsData() {
+    try {
+        // 从GitHub加载标签数据
+        const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/tags.json';
+        const response = await fetch(githubUrl);
+        
+        if (!response.ok) {
+            throw new Error('无法从GitHub加载标签数据文件');
+        }
+        
+        const data = await response.json();
+        tagsData = data.tags;
+        console.log('详情页面从GitHub加载的标签数据:', tagsData);
+    } catch (error) {
+        console.error('从GitHub加载标签数据失败:', error);
+        tagsData = [];
+    }
+}
+
+// 获取作品标签名称
+function getWorkTags(tags) {
+    if (!tags || !Array.isArray(tags)) {
+        return '无标签';
+    }
+    
+    const tagNames = tags.map(tagId => {
+        const tag = tagsData.find(t => t.id === tagId);
+        return tag ? tag.name : null;
+    }).filter(name => name !== null);
+    
+    return tagNames.length > 0 ? tagNames.join(', ') : '无标签';
+}
 
 // 加载建筑数据（如果尚未加载）
 async function loadBuildingsData() {
@@ -34,7 +92,7 @@ async function loadBuildingsData() {
         // 处理数据结构，添加缺失的默认值
         buildingsData = data.map(item => ({
             ...item,
-            type: item.type || 'building',
+            type: item.type || item.category || 'building',
             downloads: item.downloads || 0,
             likes: item.likes || 0,
             views: item.views || 0
@@ -76,6 +134,10 @@ function loadWorkDetail() {
         const savedWork = localStorage.getItem('currentWork');
         if (savedWork) {
             currentWork = JSON.parse(savedWork);
+            // 确保type字段正确设置
+            if (currentWork && !currentWork.type && currentWork.category) {
+                currentWork.type = currentWork.category;
+            }
         } else {
             // 如果都没有，显示默认作品
             currentWork = buildingsData[0];
@@ -91,6 +153,11 @@ function loadWorkDetail() {
         }
     }
     
+    // 确保type字段正确设置
+    if (currentWork && !currentWork.type && currentWork.category) {
+        currentWork.type = currentWork.category;
+    }
+    
     if (currentWork) {
         displayWorkDetail();
     }
@@ -101,19 +168,26 @@ function displayWorkDetail() {
     // 更新基本信息
     document.getElementById('detailTitle').textContent = currentWork.title;
     document.getElementById('detailAuthor').textContent = currentWork.author;
-    document.getElementById('detailType').textContent = currentWork.type === 'building' ? '建筑' : '工具';
-    document.getElementById('detailCategory').textContent = getCategoryName(currentWork.category);
-    document.getElementById('detailFileSize').textContent = currentWork.fileSize;
+    document.getElementById('detailType').textContent = getTypeName(currentWork.type);
+    document.getElementById('detailCategory').textContent = getWorkTags(currentWork.tags);
+    document.getElementById('detailFileSize').textContent = currentWork.size || currentWork.fileSize || '未知';
     document.getElementById('detailFileFormat').textContent = currentWork.fileFormat || '未知';
     document.getElementById('detailDate').textContent = currentWork.date;
-    document.getElementById('detailDescription').textContent = currentWork.description;
+    // 处理作品介绍中的换行符
+    const descriptionElement = document.getElementById('detailDescription');
+    if (currentWork.description) {
+        // 将\n转换为<br>标签，支持换行显示
+        descriptionElement.innerHTML = currentWork.description.replace(/\n/g, '<br>');
+    } else {
+        descriptionElement.textContent = '暂无描述';
+    }
     
     // 根据类型显示或隐藏建筑尺寸
     const buildingSizeElement = document.getElementById('detailBuildingSize');
     const buildingSizeLabel = buildingSizeElement.previousElementSibling;
     
-    if (currentWork.type === 'tool') {
-        // 工具类型隐藏建筑尺寸
+    if (currentWork.type === 'tool' || currentWork.type === 'music' || currentWork.type === 'command') {
+        // 非建筑类型隐藏建筑尺寸
         buildingSizeElement.style.display = 'none';
         buildingSizeLabel.style.display = 'none';
     } else {
@@ -212,17 +286,46 @@ function loadRelatedWorks() {
     const relatedGrid = document.getElementById('relatedGrid');
     relatedGrid.innerHTML = '';
     
-    // 获取除当前作品外的所有作品
-    const availableWorks = buildingsData.filter(item => item.id !== currentWork.id);
-    
-    // 随机打乱并选择前3个
-    const shuffled = availableWorks.sort(() => Math.random() - 0.5);
-    const randomWorks = shuffled.slice(0, 3);
-    
-    randomWorks.forEach(work => {
-        const card = createRelatedCard(work);
-        relatedGrid.appendChild(card);
+    // 重新加载所有数据以确保包含所有类型
+    loadAllDataForRelated().then(allData => {
+        // 获取除当前作品外的所有作品
+        const availableWorks = allData.filter(item => item.id !== currentWork.id);
+        
+        // 随机打乱并选择前3个
+        const shuffled = availableWorks.sort(() => Math.random() - 0.5);
+        const randomWorks = shuffled.slice(0, 3);
+        
+        randomWorks.forEach(work => {
+            const card = createRelatedCard(work);
+            relatedGrid.appendChild(card);
+        });
     });
+}
+
+// 加载所有数据用于随机推荐
+async function loadAllDataForRelated() {
+    try {
+        // 从GitHub加载完整数据
+        const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/content_data.json';
+        const response = await fetch(githubUrl);
+        
+        if (!response.ok) {
+            throw new Error('无法从GitHub加载数据文件');
+        }
+        
+        const data = await response.json();
+        // 处理数据结构，添加缺失的默认值
+        return data.map(item => ({
+            ...item,
+            type: item.type || item.category || 'building',
+            downloads: item.downloads || 0,
+            likes: item.likes || 0,
+            views: item.views || 0
+        }));
+    } catch (error) {
+        console.error('加载随机推荐数据失败:', error);
+        return buildingsData; // 降级使用buildingsData
+    }
 }
 
 // 创建相关作品卡片
@@ -231,13 +334,39 @@ function createRelatedCard(work) {
     card.className = 'building-card';
     card.style.cursor = 'pointer';
     
-    const typeTag = work.type === 'tool' ? '工具' : '建筑';
-    const categoryTag = getCategoryName(work.category);
+    // 使用getTypeName函数正确显示类型
+    console.log('随机推荐作品类型:', work.type); // 调试日志
+    const typeTag = getTypeName(work.type);
+    console.log('随机推荐类型标签:', typeTag); // 调试日志
+    
+    // 获取作品的标签
+    const workTags = getWorkTags(work.tags);
     
     // 处理图片路径
     let workImagePath = work.image;
     if (workImagePath && !workImagePath.startsWith('http') && !workImagePath.startsWith('../')) {
         workImagePath = '../' + workImagePath;
+    }
+    
+    // 构建标签HTML
+    let tagsHtml = '';
+    if (work.tags && Array.isArray(work.tags) && tagsData.length > 0) {
+        work.tags.forEach(tagId => {
+            const tag = tagsData.find(t => t.id === tagId);
+            if (tag) {
+                // 判断颜色深浅，决定文字颜色
+                const isLightColor = isColorLight(tag.color);
+                const textColor = isLightColor ? '#333' : '#fff';
+                
+                tagsHtml += `<span class="building-tag" style="background: ${tag.color} !important; border-color: ${tag.color} !important; color: ${textColor} !important;">${tag.name}</span>`;
+            }
+        });
+    }
+    
+    // 根据类型决定是否显示建筑尺寸
+    let buildingSizeHtml = '';
+    if (work.type === 'building') {
+        buildingSizeHtml = `<span><i class="fas fa-cube"></i> ${work.buildingSize || '未知'}</span>`;
     }
     
     card.innerHTML = `
@@ -246,10 +375,14 @@ function createRelatedCard(work) {
             <h3 class="building-title">${work.title}</h3>
             <p class="building-author">作者: ${work.author}</p>
             <div class="building-stats">
-                <span class="building-tag">${typeTag}</span>
-                <span class="building-tag">${categoryTag}</span>
-                <span><i class="fas fa-file"></i> ${work.fileSize}</span>
-                <span><i class="fas fa-cube"></i> ${work.buildingSize}</span>
+                <div class="building-stats-left">
+                    <span class="building-tag">${typeTag}</span>
+                    ${tagsHtml}
+                </div>
+                <div class="building-stats-right">
+                    <span><i class="fas fa-file"></i> ${work.size || work.fileSize || '未知'}</span>
+                    ${buildingSizeHtml}
+                </div>
             </div>
         </div>
     `;
@@ -272,7 +405,7 @@ function goBack() {
         window.history.back();
     } else {
         // 如果没有历史记录，返回首页
-        window.location.href = 'index.html';
+        window.location.href = '../index.html';
     }
 }
 
@@ -297,9 +430,14 @@ function downloadFile() {
             downloadPath = `music/${currentWork.fileName}`;
         } else if (currentWork.type === 'command' || currentWork.category === 'command') {
             downloadPath = `command/${currentWork.fileName}`;
+        } else {
+            // 默认情况
+            downloadPath = currentWork.fileName;
         }
         
+        // 使用jsDelivr CDN加速下载
         const downloadUrl = `https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/${downloadPath}`;
+        console.log('下载文件URL:', downloadUrl);
         
         // 创建隐藏的下载链接
         const downloadLink = document.createElement('a');
@@ -442,6 +580,35 @@ function getCategoryName(category) {
     return categoryMap[category] || '其他';
 }
 
+// 获取类型名称
+function getTypeName(type) {
+    console.log('getTypeName输入类型:', type); // 调试日志
+    const typeMap = {
+        'building': '建筑',
+        'tool': '工具',
+        'music': '音乐',
+        'command': '指令'
+    };
+    const result = typeMap[type] || '其他';
+    console.log('getTypeName返回结果:', result); // 调试日志
+    return result;
+}
+
+// 判断颜色是否为浅色
+function isColorLight(color) {
+    // 将十六进制颜色转换为RGB
+    const hex = color.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // 计算亮度
+    const brightness = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    
+    // 返回true表示是浅色，false表示是深色
+    return brightness > 155;
+}
+
 // 设置移动端菜单
 function setupMobileMenu() {
     const menuBtn = document.getElementById('mobileMenuBtn');
@@ -467,12 +634,15 @@ function setupMobileMenu() {
         // 点击菜单项关闭菜单
         const navLinks = navMenu.querySelectorAll('.nav-link');
         navLinks.forEach(link => {
-            link.addEventListener('click', function() {
+            link.addEventListener('click', function(e) {
+                // 允许正常跳转，只关闭移动菜单
+                console.log('移动端菜单项被点击:', this.href);
                 navMenu.classList.remove('active');
                 const spans = menuBtn.querySelectorAll('span');
                 spans[0].style.transform = '';
                 spans[1].style.opacity = '1';
                 spans[2].style.transform = '';
+                // 不阻止默认行为，让链接正常跳转
             });
         });
         
@@ -526,9 +696,12 @@ function openImageModal() {
     modalImage.alt = mainImage.alt;
     modal.style.display = 'block';
     
-    // 重置缩放和旋转
+    // 重置缩放和旋转，并居中图片
     imageScale = 1;
     imageRotation = 0;
+    modalImage.style.left = '0';
+    modalImage.style.top = '0';
+    modalImage.style.position = 'relative';
     updateImageTransform();
     
     // 添加拖动功能
@@ -544,18 +717,7 @@ function closeImageModal() {
     document.body.style.overflow = 'auto';
 }
 
-function toggleZoom() {
-    const mainImage = document.getElementById('mainImage');
-    if (mainImage.style.cursor === 'zoom-out') {
-        // 缩小
-        mainImage.style.transform = 'scale(1)';
-        mainImage.style.cursor = 'zoom-in';
-    } else {
-        // 放大
-        mainImage.style.transform = 'scale(1.5)';
-        mainImage.style.cursor = 'zoom-out';
-    }
-}
+
 
 function zoomIn() {
     imageScale = Math.min(imageScale + 0.2, 3);
@@ -570,6 +732,9 @@ function zoomOut() {
 function resetZoom() {
     imageScale = 1;
     imageRotation = 0;
+    const modalImage = document.getElementById('modalImage');
+    modalImage.style.left = '0';
+    modalImage.style.top = '0';
     updateImageTransform();
 }
 
@@ -581,6 +746,10 @@ function rotateImage() {
 function updateImageTransform() {
     const modalImage = document.getElementById('modalImage');
     modalImage.style.transform = `scale(${imageScale}) rotate(${imageRotation}deg)`;
+    // 确保图片始终居中
+    modalImage.style.position = 'relative';
+    modalImage.style.left = '0';
+    modalImage.style.top = '0';
 }
 
 // 设置图片拖动功能
@@ -682,4 +851,4 @@ document.getElementById('modalImage').addEventListener('wheel', function(e) {
     }
     
     updateImageTransform();
-});
+}, { passive: false });

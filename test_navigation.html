@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>导航测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>导航链接测试</h1>
+    <div id="testResults"></div>
+    
+    <script>
+        const results = document.getElementById('testResults');
+        
+        function addResult(message, isSuccess) {
+            const div = document.createElement('div');
+            div.className = `test-result ${isSuccess ? 'success' : 'error'}`;
+            div.textContent = message;
+            results.appendChild(div);
+        }
+        
+        // 测试1: 检查是否有导航链接
+        const navLinks = document.querySelectorAll('.nav-link');
+        if (navLinks.length > 0) {
+            addResult(`找到 ${navLinks.length} 个导航链接`, true);
+            
+            // 测试2: 检查每个链接的href属性
+            navLinks.forEach((link, index) => {
+                if (link.href) {
+                    addResult(`链接 ${index + 1}: ${link.href} - 有效`, true);
+                } else {
+                    addResult(`链接 ${index + 1}: 缺少href属性`, false);
+                }
+                
+                // 测试3: 添加点击监听器
+                link.addEventListener('click', function(e) {
+                    addResult(`点击了链接: ${this.textContent}`, true);
+                    console.log('链接被点击:', this.href);
+                });
+            });
+        } else {
+            addResult('未找到导航链接', false);
+        }
+        
+        // 测试4: 检查是否有阻止默认行为的代码
+        addResult('检查是否有preventDefault阻止导航...', true);
+        
+        // 测试5: 检查z-index层级
+        const header = document.querySelector('.header');
+        if (header) {
+            const headerStyle = window.getComputedStyle(header);
+            addResult(`头部z-index: ${headerStyle.zIndex}`, true);
+        }
+        
+        addResult('测试完成！请点击导航链接查看结果', true);
+    </script>
+    
+    <!-- 模拟导航结构 -->
+    <header class="header">
+        <nav class="nav">
+            <a href="../index.html" class="nav-link">首页</a>
+            <a href="buildings.html" class="nav-link">建筑</a>
+            <a href="tools.html" class="nav-link">工具</a>
+        </nav>
+    </header>
+</body>
+</html>

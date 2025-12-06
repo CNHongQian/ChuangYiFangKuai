@@ -2,8 +2,7 @@
 let buildingsPageData = [];
 let buildingsCurrentFilter = 'all'; // 重命名以避免冲突
 let buildingsCurrentView = 'grid'; // 重命名以避免冲突
-let buildingsDisplayedItems = 12; // 重命名以避免冲突
-const buildingsItemsPerPage = 12; // 重命名以避免冲突
+let tagsData = []; // 存储标签数据
 
 // 加载建筑数据
 async function loadBuildingsData() {
@@ -79,10 +78,92 @@ async function loadBuildingsData() {
     renderBuildings();
 }
 
+// 加载标签数据
+async function loadTagsData() {
+    try {
+        // 从GitHub加载标签数据
+        const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/tags.json';
+        const response = await fetch(githubUrl);
+        
+        if (!response.ok) {
+            throw new Error('无法从GitHub加载标签数据文件');
+        }
+        
+        const data = await response.json();
+        tagsData = data.tags;
+        console.log('从GitHub加载的标签数据:', tagsData);
+        
+        // 生成过滤按钮
+        generateFilterButtons();
+    } catch (error) {
+        console.error('从GitHub加载标签数据失败:', error);
+        tagsData = [];
+    }
+}
+
+// 生成过滤按钮
+function generateFilterButtons() {
+    const filterContainer = document.querySelector('.filter-buttons');
+    if (!filterContainer) return;
+    
+    // 保留"全部"和"随机刷新"按钮
+    const allButton = filterContainer.querySelector('[data-filter="all"]');
+    const refreshButton = filterContainer.querySelector('#randomRefresh');
+    
+    // 清空现有按钮（除了保留的）
+    filterContainer.innerHTML = '';
+    
+    // 添加"全部"按钮
+    if (allButton) {
+        filterContainer.appendChild(allButton);
+    }
+    
+    // 根据当前页面类型添加相应的标签按钮
+    const currentPageType = 'building'; // 当前是建筑页面
+    const relevantTags = tagsData.filter(tag => tag.category === currentPageType);
+    
+    relevantTags.forEach(tag => {
+        const button = document.createElement('button');
+        button.className = 'filter-btn';
+        button.setAttribute('data-filter', tag.name);
+        button.textContent = tag.name;
+        
+        // 判断颜色深浅，决定文字颜色
+        const isLightColor = isColorLight(tag.color);
+        const textColor = isLightColor ? '#333' : '#fff';
+        
+        button.style.background = tag.color + ' !important';
+        button.style.borderColor = tag.color + ' !important';
+        button.style.color = textColor + ' !important';
+        
+        button.addEventListener('click', handleFilter);
+        filterContainer.appendChild(button);
+    });
+    
+    // 添加"随机刷新"按钮
+    if (refreshButton) {
+        filterContainer.appendChild(refreshButton);
+    }
+}
+
+// 判断颜色是否为浅色
+function isColorLight(color) {
+    // 将十六进制颜色转换为RGB
+    const hex = color.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // 计算亮度
+    const brightness = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    
+    // 返回true表示是浅色，false表示是深色
+    return brightness > 155;
+}
+
 // 加载示例数据
 async function loadSampleData() {
     try {
-        console.log('开始加载示例数据...');
         const response = await fetch('../data/sample_data.json');
         if (!response.ok) {
             throw new Error('无法加载示例数据文件');
@@ -119,6 +200,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.getElementById('searchInput').value = decodeURIComponent(searchParam);
     }
     
+    // 加载标签数据
+    await loadTagsData();
+    
     // 加载数据（会在加载完成后自动渲染）
     await loadBuildingsData();
 });
@@ -148,9 +232,7 @@ function setupEventListeners() {
         btn.addEventListener('click', handleViewChange);
     });
     
-    // 加载更多按钮
-    const loadMoreBtn = document.querySelector('.load-more-btn');
-    loadMoreBtn.addEventListener('click', loadMore);
+    
     
     // 模态框关闭按钮
     const closeBtn = document.querySelector('.close');
@@ -179,6 +261,22 @@ function renderBuildings() {
     
     let dataToShow = [...buildingsPageData];
     
+    // 应用标签过滤
+    if (buildingsCurrentFilter !== 'all') {
+        dataToShow = dataToShow.filter(item => {
+            // 检查标签名称是否匹配
+            if (item.tags && Array.isArray(item.tags)) {
+                const matchingTags = item.tags.map(tagId => {
+                    const tag = tagsData.find(t => t.id === tagId);
+                    return tag ? tag.name : null;
+                }).filter(name => name !== null);
+                
+                return matchingTags.includes(buildingsCurrentFilter);
+            }
+            return false;
+        });
+    }
+    
     // 应用搜索
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
@@ -192,8 +290,8 @@ function renderBuildings() {
         }
     }
     
-    // 限制显示数量
-    const itemsToDisplay = dataToShow.slice(0, buildingsDisplayedItems);
+    // 显示所有匹配的项目（不限制数量）
+    const itemsToDisplay = dataToShow;
     
     console.log('要显示的数据:', itemsToDisplay);
     
@@ -204,10 +302,8 @@ function renderBuildings() {
     });
     
     if (itemsToDisplay.length === 0) {
-        grid.innerHTML = '<div style="text-align: center; padding: 3rem; color: #666;">没有找到相关建筑作品</div>';
+        grid.innerHTML = '<div style="text-align: center; padding: 3rem; color: #666; grid-column: 1 / -1; width: 100%; display: flex; justify-content: center; align-items: center;">没有找到相关建筑作品</div>';
     }
-    
-    updateLoadMoreButton(dataToShow.length);
 }
 
 // 创建建筑卡片
@@ -232,10 +328,14 @@ function createBuildingCard(building) {
             <h3 class="building-title">${building.title}</h3>
             <p class="building-author">作者: ${building.author || '未知'}</p>
             <div class="building-stats">
-                <span class="building-tag">${categoryTag}</span>
-                <span><i class="fas fa-file"></i> ${building.size || '未知'}</span>
-                <span><i class="fas fa-cube"></i> ${building.buildingSize || '未知'}</span>
-                <span><i class="fas fa-code"></i> ${building.fileFormat || '未知'}</span>
+                <div class="building-stats-left">
+                    <span class="building-tag">${categoryTag}</span>
+                </div>
+                <div class="building-stats-right">
+                    <span><i class="fas fa-file"></i> ${building.size || '未知'}</span>
+                    <span><i class="fas fa-cube"></i> ${building.buildingSize || '未知'}</span>
+                    <span><i class="fas fa-code"></i> ${building.fileFormat || '未知'}</span>
+                </div>
             </div>
         </div>
     `;
@@ -269,7 +369,6 @@ function getCategoryName(category) {
 
 // 搜索处理
 function handleSearch() {
-    displayedItems = itemsPerPage;
     renderBuildings();
 }
 
@@ -280,14 +379,12 @@ function handleFilter(event) {
     event.target.classList.add('active');
     
     buildingsCurrentFilter = event.target.dataset.filter;
-    displayedItems = itemsPerPage;
     renderBuildings();
 }
 
 // 随机刷新处理
 function handleRandomRefresh() {
     buildingsPageData = [...buildingsPageData].sort(() => Math.random() - 0.5);
-    displayedItems = itemsPerPage;
     renderBuildings();
     
     const refreshBtn = document.getElementById('randomRefresh');
@@ -313,21 +410,7 @@ function handleViewChange(event) {
     }
 }
 
-// 加载更多
-function loadMore() {
-    buildingsDisplayedItems += buildingsItemsPerPage;
-    renderBuildings();
-}
 
-// 更新加载更多按钮状态
-function updateLoadMoreButton(totalItems) {
-    const loadMoreBtn = document.querySelector('.load-more-btn');
-    if (buildingsDisplayedItems >= totalItems) {
-        loadMoreBtn.style.display = 'none';
-    } else {
-        loadMoreBtn.style.display = 'block';
-    }
-}
 
 // 跳转到详情页面
 function goToDetail(building) {

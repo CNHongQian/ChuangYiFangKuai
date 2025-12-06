@@ -170,9 +170,21 @@ function setupEventListeners() {
 
 // 导航处理
 function handleNavigation(event) {
+    // 检查是否是详情页面，如果是则允许正常跳转
+    if (window.location.pathname.includes('detail.html')) {
+        // 详情页面不阻止默认行为，允许正常跳转
+        return;
+    }
+    
+    // 首页或其他页面使用SPA导航
     event.preventDefault();
     const section = event.target.dataset.section;
-    showSection(section);
+    if (section) {
+        showSection(section);
+    } else {
+        // 如果没有data-section属性，使用默认跳转
+        window.location.href = event.target.href;
+    }
 }
 
 // 显示指定部分
@@ -259,7 +271,7 @@ function renderBuildings() {
     });
     
     if (itemsToDisplay.length === 0) {
-        grid.innerHTML = '<div style="text-align: center; padding: 3rem; color: #666;">没有找到相关作品</div>';
+        grid.innerHTML = '<div style="text-align: center; padding: 3rem; color: #666; grid-column: 1 / -1; width: 100%; display: flex; justify-content: center; align-items: center;">没有找到相关作品</div>';
     }
     
     // 更新加载更多按钮状态
@@ -284,7 +296,7 @@ function createBuildingCard(building) {
     card.className = 'building-card';
     card.onclick = () => showDetail(building);
     
-    const typeTag = building.type === 'tool' ? '工具' : '建筑';
+    const typeTag = getTypeName(building.type);
     const categoryTag = getCategoryName(building.category);
     
     card.innerHTML = `
@@ -293,10 +305,14 @@ function createBuildingCard(building) {
             <h3 class="building-title">${building.title}</h3>
             <p class="building-author">作者: ${building.author}</p>
             <div class="building-stats">
-                <span class="building-tag">${typeTag}</span>
-                <span class="building-tag">${categoryTag}</span>
-                <span><i class="fas fa-download"></i> ${building.downloads}</span>
-                <span><i class="fas fa-heart"></i> ${building.likes}</span>
+                <div class="building-stats-left">
+                    <span class="building-tag">${typeTag}</span>
+                    <span class="building-tag">${categoryTag}</span>
+                </div>
+                <div class="building-stats-right">
+                    <span><i class="fas fa-download"></i> ${building.downloads}</span>
+                    <span><i class="fas fa-heart"></i> ${building.likes}</span>
+                </div>
             </div>
         </div>
     `;
@@ -313,6 +329,17 @@ function getCategoryName(category) {
         'command': '指令'
     };
     return categoryMap[category] || '其他';
+}
+
+// 获取类型名称
+function getTypeName(type) {
+    const typeMap = {
+        'building': '建筑',
+        'tool': '工具',
+        'music': '音乐',
+        'command': '指令'
+    };
+    return typeMap[type] || '其他';
 }
 
 // 随机刷新处理

@@ -1,5 +1,93 @@
 // 音乐页面专用JavaScript
 let musicPageData = [];
+let tagsData = []; // 存储标签数据
+let musicCurrentFilter = 'all';
+let musicCurrentView = 'grid';
+let musicDisplayedItems = 12;
+const musicItemsPerPage = 12;
+
+// 加载标签数据
+async function loadTagsData() {
+    try {
+        // 从GitHub加载标签数据
+        const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/tags.json';
+        const response = await fetch(githubUrl);
+        
+        if (!response.ok) {
+            throw new Error('无法从GitHub加载标签数据文件');
+        }
+        
+        const data = await response.json();
+        tagsData = data.tags;
+        console.log('从GitHub加载的标签数据:', tagsData);
+        
+        // 生成过滤按钮
+        generateFilterButtons();
+    } catch (error) {
+        console.error('从GitHub加载标签数据失败:', error);
+        tagsData = [];
+    }
+}
+
+// 生成过滤按钮
+function generateFilterButtons() {
+    const filterContainer = document.querySelector('.filter-buttons');
+    if (!filterContainer) return;
+    
+    // 保留"全部"和"随机刷新"按钮
+    const allButton = filterContainer.querySelector('[data-filter="all"]');
+    const refreshButton = filterContainer.querySelector('#randomRefresh');
+    
+    // 清空现有按钮（除了保留的）
+    filterContainer.innerHTML = '';
+    
+    // 添加"全部"按钮
+    if (allButton) {
+        filterContainer.appendChild(allButton);
+    }
+    
+    // 根据当前页面类型添加相应的标签按钮
+    const currentPageType = 'music'; // 当前是音乐页面
+    const relevantTags = tagsData.filter(tag => tag.category === currentPageType);
+    
+    relevantTags.forEach(tag => {
+        const button = document.createElement('button');
+        button.className = 'filter-btn';
+        button.setAttribute('data-filter', tag.name);
+        button.textContent = tag.name;
+        
+        // 判断颜色深浅，决定文字颜色
+        const isLightColor = isColorLight(tag.color);
+        const textColor = isLightColor ? '#333' : '#fff';
+        
+        button.style.background = tag.color + ' !important';
+        button.style.borderColor = tag.color + ' !important';
+        button.style.color = textColor + ' !important';
+        
+        button.addEventListener('click', handleFilter);
+        filterContainer.appendChild(button);
+    });
+    
+    // 添加"随机刷新"按钮
+    if (refreshButton) {
+        filterContainer.appendChild(refreshButton);
+    }
+}
+
+// 判断颜色是否为浅色
+function isColorLight(color) {
+    // 将十六进制颜色转换为RGB
+    const hex = color.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // 计算亮度
+    const brightness = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    
+    // 返回true表示是浅色，false表示是深色
+    return brightness > 155;
+}
 
 // 加载音乐数据
 async function loadMusicData() {
@@ -99,6 +187,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         document.getElementById('searchInput').value = decodeURIComponent(searchParam);
     }
     
+    // 加载标签数据
+    await loadTagsData();
+    
     await loadMusicData();
     renderMusic();
 });
@@ -128,10 +219,6 @@ function setupEventListeners() {
         btn.addEventListener('click', handleViewChange);
     });
     
-    // 加载更多按钮
-    const loadMoreBtn = document.querySelector('.load-more-btn');
-    loadMoreBtn.addEventListener('click', loadMore);
-    
     // 模态框关闭按钮
     const closeBtn = document.querySelector('.close');
     closeBtn.addEventListener('click', closeModal);
@@ -152,23 +239,34 @@ function renderMusic() {
     
     let dataToShow = [...musicPageData];
     
-    // 应用过滤
-    if (currentFilter !== 'all') {
-        dataToShow = dataToShow.filter(item => item.category === currentFilter);
+    // 应用标签过滤
+    if (musicCurrentFilter !== 'all') {
+        dataToShow = dataToShow.filter(item => {
+            // 检查标签名称是否匹配
+            if (item.tags && Array.isArray(item.tags)) {
+                const matchingTags = item.tags.map(tagId => {
+                    const tag = tagsData.find(t => t.id === tagId);
+                    return tag ? tag.name : null;
+                }).filter(name => name !== null);
+                
+                return matchingTags.includes(musicCurrentFilter);
+            }
+            return false;
+        });
     }
     
     // 应用搜索
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     if (searchTerm) {
         dataToShow = dataToShow.filter(item => 
-            item.title.toLowerCase().includes(searchTerm) ||
-            item.author.toLowerCase().includes(searchTerm) ||
-            item.description.toLowerCase().includes(searchTerm)
+            (item.title && item.title.toLowerCase().includes(searchTerm)) ||
+            (item.author && item.author.toLowerCase().includes(searchTerm)) ||
+            (item.description && item.description.toLowerCase().includes(searchTerm))
         );
     }
     
-    // 限制显示数量
-    const itemsToDisplay = dataToShow.slice(0, displayedItems);
+    // 显示所有匹配的项目（不限制数量）
+    const itemsToDisplay = dataToShow;
     
     itemsToDisplay.forEach((music, index) => {
         const card = createMusicCard(music);
@@ -177,10 +275,22 @@ function renderMusic() {
     });
     
     if (itemsToDisplay.length === 0) {
-        grid.innerHTML = '<div style="text-align: center; padding: 3rem; color: #666;">没有找到相关音乐作品</div>';
+        grid.innerHTML = '<div style="text-align: center; padding: 3rem; color: #666; grid-column: 1 / -1; width: 100%; display: flex; justify-content: center; align-items: center;">没有找到相关音乐作品</div>';
+    }
+}
+
+// 获取作品标签名称
+function getWorkTags(tags) {
+    if (!tags || !Array.isArray(tags)) {
+        return '无标签';
     }
     
-    updateLoadMoreButton(dataToShow.length);
+    const tagNames = tags.map(tagId => {
+        const tag = tagsData.find(t => t.id === tagId);
+        return tag ? tag.name : null;
+    }).filter(name => name !== null);
+    
+    return tagNames.length > 0 ? tagNames.join(', ') : '无标签';
 }
 
 // 创建音乐卡片
@@ -191,20 +301,48 @@ function createMusicCard(music) {
     const cardInner = document.createElement('div');
     cardInner.onclick = () => goToDetail(music);
     
-    const typeTag = music.type === 'tool' ? '工具' : '音乐';
-    const categoryTag = getCategoryName(music.category);
+    // 使用getTypeName函数获取类型名称
+    const typeTag = getTypeName(music.type);
+    
+    // 获取作品的标签
+    const workTags = getWorkTags(music.tags);
+    
+    // 处理图片路径，确保使用正确的相对路径
+    let imagePath = music.image;
+    if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('../')) {
+        imagePath = '../' + imagePath;
+    }
+    
+    // 构建标签HTML
+    let tagsHtml = '';
+    if (music.tags && Array.isArray(music.tags) && tagsData.length > 0) {
+        music.tags.forEach(tagId => {
+            const tag = tagsData.find(t => t.id === tagId);
+            if (tag) {
+                // 判断颜色深浅，决定文字颜色
+                const isLightColor = isColorLight(tag.color);
+                const textColor = isLightColor ? '#333' : '#fff';
+                
+                tagsHtml += `<span class="building-tag" style="background: ${tag.color} !important; border-color: ${tag.color} !important; color: ${textColor} !important;">${tag.name}</span>`;
+            }
+        });
+    }
     
     cardInner.innerHTML = `
-        <img src="${music.image}" alt="${music.title}" class="building-image">
+        <img src="${imagePath}" alt="${music.title}" class="building-image" onerror="this.src='https://via.placeholder.com/300x200/ff69b4/ffffff?text=暂无图片'">
         <div class="building-info">
             <h3 class="building-title">${music.title}</h3>
-            <p class="building-author">作者: ${music.author}</p>
+            <p class="building-author">作者: ${music.author || '未知'}</p>
             <div class="building-stats">
-                <span class="building-tag">${typeTag}</span>
-                <span class="building-tag">${categoryTag}</span>
-                <span><i class="fas fa-file"></i> ${music.fileSize}</span>
-                <span><i class="fas fa-code"></i> ${music.fileFormat || '未知'}</span>
-                <span><i class="fas fa-music"></i> 音乐</span>
+                <div class="building-stats-left">
+                    <span class="building-tag">${typeTag}</span>
+                    ${tagsHtml}
+                </div>
+                <div class="building-stats-right">
+                    <span><i class="fas fa-file"></i> ${music.size || music.fileSize || '未知'}</span>
+                    <span><i class="fas fa-code"></i> ${music.fileFormat || '未知'}</span>
+                    <span><i class="fas fa-music"></i> 音乐</span>
+                </div>
             </div>
         </div>
     `;
@@ -235,9 +373,19 @@ function getCategoryName(category) {
     return categoryMap[category] || '其他';
 }
 
+// 获取类型名称
+function getTypeName(type) {
+    const typeMap = {
+        'building': '建筑',
+        'tool': '工具',
+        'music': '音乐',
+        'command': '指令'
+    };
+    return typeMap[type] || '其他';
+}
+
 // 搜索处理
 function handleSearch() {
-    displayedItems = itemsPerPage;
     renderMusic();
 }
 
@@ -247,15 +395,13 @@ function handleFilter(event) {
     filterButtons.forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
     
-    currentFilter = event.target.dataset.filter;
-    displayedItems = itemsPerPage;
+    musicCurrentFilter = event.target.dataset.filter;
     renderMusic();
 }
 
 // 随机刷新处理
 function handleRandomRefresh() {
     musicPageData = [...musicPageData].sort(() => Math.random() - 0.5);
-    displayedItems = itemsPerPage;
     renderMusic();
     
     const refreshBtn = document.getElementById('randomRefresh');
@@ -271,29 +417,13 @@ function handleViewChange(event) {
     viewButtons.forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
     
-    currentView = event.target.dataset.view;
+    musicCurrentView = event.target.dataset.view;
     const grid = document.getElementById('buildingsGrid');
     
-    if (currentView === 'list') {
+    if (musicCurrentView === 'list') {
         grid.style.gridTemplateColumns = '1fr';
     } else {
         grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(300px, 1fr))';
-    }
-}
-
-// 加载更多
-function loadMore() {
-    displayedItems += itemsPerPage;
-    renderMusic();
-}
-
-// 更新加载更多按钮状态
-function updateLoadMoreButton(totalItems) {
-    const loadMoreBtn = document.querySelector('.load-more-btn');
-    if (displayedItems >= totalItems) {
-        loadMoreBtn.style.display = 'none';
-    } else {
-        loadMoreBtn.style.display = 'block';
     }
 }
 
@@ -324,7 +454,7 @@ function shareWorkFromCard(music) {
     // 构建完整URL用于分享
     const fullUrl = window.location.origin + window.location.pathname.replace(/[^\/]*$/, '') + detailUrl;
     
-    const workType = music.type === 'music' ? '音乐' : '建筑';
+    const workType = getTypeName(music.type);
     const shareText = `快来看看！我在"创艺方块"发现了一个好东西！\n${workType}: ${music.title}\n快点击链接查看下载吧：${fullUrl}`;
     
     // 复制格式化的文本

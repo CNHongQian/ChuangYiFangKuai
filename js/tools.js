@@ -1,5 +1,10 @@
 // 工具页面专用JavaScript
 let toolsPageData = [];
+let tagsData = []; // 存储标签数据
+let toolsCurrentFilter = 'all';
+let toolsCurrentView = 'grid';
+let toolsDisplayedItems = 12;
+const toolsItemsPerPage = 12;
 
 // 加载工具数据
 async function loadToolsData() {
@@ -74,6 +79,89 @@ async function loadToolsData() {
     }
 }
 
+// 加载标签数据
+async function loadTagsData() {
+    try {
+        // 从GitHub加载标签数据
+        const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/tags.json';
+        const response = await fetch(githubUrl);
+        
+        if (!response.ok) {
+            throw new Error('无法从GitHub加载标签数据文件');
+        }
+        
+        const data = await response.json();
+        tagsData = data.tags;
+        console.log('从GitHub加载的标签数据:', tagsData);
+        
+        // 生成过滤按钮
+        generateFilterButtons();
+    } catch (error) {
+        console.error('从GitHub加载标签数据失败:', error);
+        tagsData = [];
+    }
+}
+
+// 生成过滤按钮
+function generateFilterButtons() {
+    const filterContainer = document.querySelector('.filter-buttons');
+    if (!filterContainer) return;
+    
+    // 保留"全部"和"随机刷新"按钮
+    const allButton = filterContainer.querySelector('[data-filter="all"]');
+    const refreshButton = filterContainer.querySelector('#randomRefresh');
+    
+    // 清空现有按钮（除了保留的）
+    filterContainer.innerHTML = '';
+    
+    // 添加"全部"按钮
+    if (allButton) {
+        filterContainer.appendChild(allButton);
+    }
+    
+    // 根据当前页面类型添加相应的标签按钮
+    const currentPageType = 'tool'; // 当前是工具页面
+    const relevantTags = tagsData.filter(tag => tag.category === currentPageType);
+    
+    relevantTags.forEach(tag => {
+        const button = document.createElement('button');
+        button.className = 'filter-btn';
+        button.setAttribute('data-filter', tag.name);
+        button.textContent = tag.name;
+        
+        // 判断颜色深浅，决定文字颜色
+        const isLightColor = isColorLight(tag.color);
+        const textColor = isLightColor ? '#333' : '#fff';
+        
+        button.style.background = tag.color + ' !important';
+        button.style.borderColor = tag.color + ' !important';
+        button.style.color = textColor + ' !important';
+        
+        button.addEventListener('click', handleFilter);
+        filterContainer.appendChild(button);
+    });
+    
+    // 添加"随机刷新"按钮
+    if (refreshButton) {
+        filterContainer.appendChild(refreshButton);
+    }
+}
+
+// 判断颜色是否为浅色
+function isColorLight(color) {
+    // 将十六进制颜色转换为RGB
+    const hex = color.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // 计算亮度
+    const brightness = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    
+    // 返回true表示是浅色，false表示是深色
+    return brightness > 155;
+}
+
 // 加载示例数据
 async function loadSampleData() {
     try {
@@ -91,6 +179,10 @@ async function loadSampleData() {
 document.addEventListener('DOMContentLoaded', async function() {
     setupEventListeners();
     setupMobileMenu();
+    
+    // 加载标签数据
+    await loadTagsData();
+    
     await loadToolsData();
     renderTools();
 });
@@ -120,10 +212,6 @@ function setupEventListeners() {
         btn.addEventListener('click', handleViewChange);
     });
     
-    // 加载更多按钮
-    const loadMoreBtn = document.querySelector('.load-more-btn');
-    loadMoreBtn.addEventListener('click', loadMore);
-    
     // 模态框关闭按钮
     const closeBtn = document.querySelector('.close');
     closeBtn.addEventListener('click', closeModal);
@@ -144,23 +232,34 @@ function renderTools() {
     
     let dataToShow = [...toolsPageData];
     
-    // 应用过滤
-    if (currentFilter !== 'all') {
-        dataToShow = dataToShow.filter(item => item.category === currentFilter);
+    // 应用标签过滤
+    if (toolsCurrentFilter !== 'all') {
+        dataToShow = dataToShow.filter(item => {
+            // 检查标签名称是否匹配
+            if (item.tags && Array.isArray(item.tags)) {
+                const matchingTags = item.tags.map(tagId => {
+                    const tag = tagsData.find(t => t.id === tagId);
+                    return tag ? tag.name : null;
+                }).filter(name => name !== null);
+                
+                return matchingTags.includes(toolsCurrentFilter);
+            }
+            return false;
+        });
     }
     
     // 应用搜索
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     if (searchTerm) {
         dataToShow = dataToShow.filter(item => 
-            item.title.toLowerCase().includes(searchTerm) ||
-            item.author.toLowerCase().includes(searchTerm) ||
-            item.description.toLowerCase().includes(searchTerm)
+            (item.title && item.title.toLowerCase().includes(searchTerm)) ||
+            (item.author && item.author.toLowerCase().includes(searchTerm)) ||
+            (item.description && item.description.toLowerCase().includes(searchTerm))
         );
     }
     
-    // 限制显示数量
-    const itemsToDisplay = dataToShow.slice(0, displayedItems);
+    // 显示所有匹配的项目（不限制数量）
+    const itemsToDisplay = dataToShow;
     
     itemsToDisplay.forEach((tool, index) => {
         const card = createToolCard(tool);
@@ -169,10 +268,8 @@ function renderTools() {
     });
     
     if (itemsToDisplay.length === 0) {
-        grid.innerHTML = '<div style="text-align: center; padding: 3rem; color: #666;">没有找到相关工具</div>';
+        grid.innerHTML = '<div style="text-align: center; padding: 3rem; color: #666; grid-column: 1 / -1; width: 100%; display: flex; justify-content: center; align-items: center;">没有找到相关工具</div>';
     }
-    
-    updateLoadMoreButton(dataToShow.length);
 }
 
 // 创建工具卡片
@@ -183,17 +280,47 @@ function createToolCard(tool) {
     const cardInner = document.createElement('div');
     cardInner.onclick = () => goToDetail(tool);
     
-    const categoryTag = getCategoryName(tool.category);
+    // 使用getTypeName函数获取类型名称
+    const typeTag = getTypeName(tool.type);
+    
+    // 获取作品的标签
+    const workTags = getWorkTags(tool.tags);
+    
+    // 处理图片路径，确保使用正确的相对路径
+    let imagePath = tool.image;
+    if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('../')) {
+        imagePath = '../' + imagePath;
+    }
+    
+    // 构建标签HTML
+    let tagsHtml = '';
+    if (tool.tags && Array.isArray(tool.tags) && tagsData.length > 0) {
+        tool.tags.forEach(tagId => {
+            const tag = tagsData.find(t => t.id === tagId);
+            if (tag) {
+                // 判断颜色深浅，决定文字颜色
+                const isLightColor = isColorLight(tag.color);
+                const textColor = isLightColor ? '#333' : '#fff';
+                
+                tagsHtml += `<span class="building-tag" style="background: ${tag.color} !important; border-color: ${tag.color} !important; color: ${textColor} !important;">${tag.name}</span>`;
+            }
+        });
+    }
     
     cardInner.innerHTML = `
-        <img src="${tool.image}" alt="${tool.title}" class="building-image">
+        <img src="${imagePath}" alt="${tool.title}" class="building-image" onerror="this.src='https://via.placeholder.com/300x200/ff69b4/ffffff?text=暂无图片'">
         <div class="building-info">
             <h3 class="building-title">${tool.title}</h3>
-            <p class="building-author">开发者: ${tool.author}</p>
+            <p class="building-author">作者: ${tool.author || '未知'}</p>
             <div class="building-stats">
-                <span class="building-tag">${categoryTag}</span>
-                <span><i class="fas fa-file"></i> ${tool.fileSize}</span>
-                <span><i class="fas fa-code"></i> ${tool.fileFormat || '未知'}</span>
+                <div class="building-stats-left">
+                    <span class="building-tag">${typeTag}</span>
+                    ${tagsHtml}
+                </div>
+                <div class="building-stats-right">
+                    <span><i class="fas fa-file"></i> ${tool.size || tool.fileSize || '未知'}</span>
+                    <span><i class="fas fa-code"></i> ${tool.fileFormat || '未知'}</span>
+                </div>
             </div>
         </div>
     `;
@@ -213,6 +340,31 @@ function createToolCard(tool) {
     return card;
 }
 
+// 获取作品标签名称
+function getWorkTags(tags) {
+    if (!tags || !Array.isArray(tags)) {
+        return '无标签';
+    }
+    
+    const tagNames = tags.map(tagId => {
+        const tag = tagsData.find(t => t.id === tagId);
+        return tag ? tag.name : null;
+    }).filter(name => name !== null);
+    
+    return tagNames.length > 0 ? tagNames.join(', ') : '无标签';
+}
+
+// 获取类型名称
+function getTypeName(type) {
+    const typeMap = {
+        'building': '建筑',
+        'tool': '工具',
+        'music': '音乐',
+        'command': '指令'
+    };
+    return typeMap[type] || '其他';
+}
+
 // 获取分类名称
 function getCategoryName(category) {
     const categoryMap = {
@@ -228,7 +380,6 @@ function getCategoryName(category) {
 
 // 搜索处理
 function handleSearch() {
-    displayedItems = itemsPerPage;
     renderTools();
 }
 
@@ -238,15 +389,13 @@ function handleFilter(event) {
     filterButtons.forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
     
-    currentFilter = event.target.dataset.filter;
-    displayedItems = itemsPerPage;
+    toolsCurrentFilter = event.target.dataset.filter;
     renderTools();
 }
 
 // 随机刷新处理
 function handleRandomRefresh() {
     toolsPageData = [...toolsPageData].sort(() => Math.random() - 0.5);
-    displayedItems = itemsPerPage;
     renderTools();
     
     const refreshBtn = document.getElementById('randomRefresh');
@@ -262,29 +411,13 @@ function handleViewChange(event) {
     viewButtons.forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
     
-    currentView = event.target.dataset.view;
+    toolsCurrentView = event.target.dataset.view;
     const grid = document.getElementById('toolsGrid');
     
-    if (currentView === 'list') {
+    if (toolsCurrentView === 'list') {
         grid.style.gridTemplateColumns = '1fr';
     } else {
         grid.style.gridTemplateColumns = 'repeat(auto-fill, minmax(300px, 1fr))';
-    }
-}
-
-// 加载更多
-function loadMore() {
-    displayedItems += itemsPerPage;
-    renderTools();
-}
-
-// 更新加载更多按钮状态
-function updateLoadMoreButton(totalItems) {
-    const loadMoreBtn = document.querySelector('.load-more-btn');
-    if (displayedItems >= totalItems) {
-        loadMoreBtn.style.display = 'none';
-    } else {
-        loadMoreBtn.style.display = 'block';
     }
 }
 
@@ -315,7 +448,7 @@ function shareWorkFromCard(tool) {
     // 构建完整URL用于分享
     const fullUrl = window.location.origin + window.location.pathname.replace(/[^\/]*$/, '') + detailUrl;
     
-    const workType = tool.type === 'tool' ? '工具' : '建筑';
+    const workType = getTypeName(tool.type);
     const shareText = `快来看看！我在"创艺方块"发现了一个好东西！\n${workType}: ${tool.title}\n快点击链接查看下载吧：${fullUrl}`;
     
     // 复制格式化的文本
