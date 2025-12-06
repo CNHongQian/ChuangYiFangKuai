@@ -47,39 +47,7 @@ async function loadToolsData() {
             await loadSampleData();
         }
     } catch (error) {
-        console.error('从GitHub加载数据失败，尝试本地数据:', error);
-        
-        // 如果GitHub加载失败，尝试本地数据
-        try {
-            const localResponse = await fetch('../data/content_data.json');
-            if (!localResponse.ok) {
-                throw new Error('无法加载本地数据文件');
-            }
-            const data = await localResponse.json();
-            
-            if (data && data.length > 0) {
-                toolsPageData = data
-                    .filter(item => item.category === 'tool' || item.type === 'tool')
-                    .map(item => ({
-                        ...item,
-                        type: item.type || item.category || 'tool',
-                        downloads: item.downloads || 0,
-                        likes: item.likes || 0,
-                        views: item.views || 0
-                    }));
-                
-                console.log('从本地加载的工具数据:', toolsPageData);
-                
-                if (toolsPageData.length === 0) {
-                    await loadSampleData();
-                }
-            } else {
-                await loadSampleData();
-            }
-        } catch (localError) {
-            console.error('本地数据也加载失败:', localError);
-            await loadSampleData();
-        }
+        console.error('从GitHub加载数据失败:', error);
     }
 }
 

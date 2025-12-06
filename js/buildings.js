@@ -6,7 +6,7 @@ let tagsData = []; // 存储标签数据
 
 // 分页相关变量
 let currentPage = 1;
-const itemsPerPage = 12;
+const buildingsItemsPerPage = 12;
 let filteredData = [];
 
 // 加载建筑数据
@@ -248,7 +248,7 @@ function setupEventListeners() {
     });
     
     nextBtn.addEventListener('click', () => {
-        const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+        const totalPages = Math.ceil(filteredData.length / buildingsItemsPerPage);
         if (currentPage < totalPages) {
             goToPage(currentPage + 1);
         }
@@ -325,8 +325,8 @@ function renderPaginatedItems() {
     grid.innerHTML = '';
     
     // 计算当前页的起始和结束索引
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
+    const startIndex = (currentPage - 1) * buildingsItemsPerPage;
+    const endIndex = startIndex + buildingsItemsPerPage;
     const itemsToDisplay = filteredData.slice(startIndex, endIndex);
     
     console.log('要显示的数据:', itemsToDisplay);
@@ -344,7 +344,7 @@ function renderPaginatedItems() {
 }
 
 function renderPagination() {
-    const totalPages = Math.ceil(filteredData.length / itemsPerPage);
+    const totalPages = Math.ceil(filteredData.length / buildingsItemsPerPage);
     const paginationNumbers = document.getElementById('paginationNumbers');
     const prevBtn = document.getElementById('prevBtn');
     const nextBtn = document.getElementById('nextBtn');
@@ -406,8 +406,8 @@ function renderPagination() {
     nextBtn.disabled = currentPage === totalPages || totalPages === 0;
     
     // 更新分页信息
-    const startItem = filteredData.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
-    const endItem = Math.min(currentPage * itemsPerPage, filteredData.length);
+    const startItem = filteredData.length === 0 ? 0 : (currentPage - 1) * buildingsItemsPerPage + 1;
+    const endItem = Math.min(currentPage * buildingsItemsPerPage, filteredData.length);
     paginationInfo.textContent = `显示第 ${startItem}-${endItem} 项，共 ${filteredData.length} 项`;
 }
 

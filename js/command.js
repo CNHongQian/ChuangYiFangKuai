@@ -130,39 +130,7 @@ async function loadCommandData() {
             await loadSampleData();
         }
     } catch (error) {
-        console.error('从GitHub加载数据失败，尝试本地数据:', error);
-        
-        // 如果GitHub加载失败，尝试本地数据
-        try {
-            const localResponse = await fetch('../data/content_data.json');
-            if (!localResponse.ok) {
-                throw new Error('无法加载本地数据文件');
-            }
-            const data = await localResponse.json();
-            
-            if (data && data.length > 0) {
-                commandPageData = data
-                    .filter(item => item.category === 'command' || item.type === 'command')
-                    .map(item => ({
-                        ...item,
-                        type: item.type || item.category || 'command',
-                        downloads: item.downloads || 0,
-                        likes: item.likes || 0,
-                        views: item.views || 0
-                    }));
-                
-                console.log('从本地加载的指令数据:', commandPageData);
-                
-                if (commandPageData.length === 0) {
-                    await loadSampleData();
-                }
-            } else {
-                await loadSampleData();
-            }
-        } catch (localError) {
-            console.error('本地数据也加载失败:', localError);
-            await loadSampleData();
-        }
+        console.error('从GitHub加载数据失败:', error);
     }
 }
 

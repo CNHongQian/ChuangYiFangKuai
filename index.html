@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>创艺方块 - 我的世界建筑分享平台</title>
     <link rel="stylesheet" href="css/styles.css">
-    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
 </head>
 <body>
     <div class="background-animation"></div>
+    <div class="menu-overlay" id="menuOverlay"></div>
     
     <header class="header">
         <div class="container">
@@ -70,6 +71,60 @@
                             <i class="fas fa-users"></i>
                             <h4>社区分享</h4>
                             <p>鼓励创作交流与分享</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 统计数据部分 -->
+        <section class="stats-section">
+            <div class="container">
+                <h3 class="section-title">平台数据统计</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-file"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h4 class="stat-number" id="totalFiles">0</h4>
+                            <p class="stat-label">文件总数</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon building">
+                            <i class="fas fa-cube"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h4 class="stat-number" id="buildingFiles">0</h4>
+                            <p class="stat-label">建筑文件</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon tool">
+                            <i class="fas fa-tools"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h4 class="stat-number" id="toolFiles">0</h4>
+                            <p class="stat-label">工具文件</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon music">
+                            <i class="fas fa-music"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h4 class="stat-number" id="musicFiles">0</h4>
+                            <p class="stat-label">音乐文件</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon command">
+                            <i class="fas fa-terminal"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h4 class="stat-number" id="commandFiles">0</h4>
+                            <p class="stat-label">指令文件</p>
                         </div>
                     </div>
                 </div>
