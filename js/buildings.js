@@ -15,7 +15,8 @@ async function loadBuildingsData() {
     
     // 只从GitHub加载数据
     try {
-        const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/content_data.json';
+        // 添加时间戳防止缓存
+        const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/content_data.json?t=' + Date.now();
         console.log('尝试从GitHub加载数据:', githubUrl);
         
         // 添加超时控制
@@ -37,6 +38,15 @@ async function loadBuildingsData() {
         
         const data = await response.json();
         console.log('GitHub原始数据:', data);
+        console.log('数据总数:', data.length);
+        
+        // 统计各类别数量
+        const categoryStats = {};
+        data.forEach(item => {
+            const cat = item.category || 'unknown';
+            categoryStats[cat] = (categoryStats[cat] || 0) + 1;
+        });
+        console.log('分类统计:', categoryStats);
         
         if (data && data.length > 0) {
             // 处理content_data.json中的数据结构，添加缺失的默认值
@@ -44,7 +54,10 @@ async function loadBuildingsData() {
             buildingsPageData = data
                 .filter(item => {
                     console.log('过滤项目:', item, 'category:', item.category, 'type:', item.type);
-                    return item.category === 'building' || item.type === 'building';
+                    // 检查category值的确切类型
+                    const isBuilding = item.category === 'building' || item.type === 'building';
+                    console.log('是否为建筑:', isBuilding, 'category值:', typeof item.category, 'category值:', item.category);
+                    return isBuilding;
                 })
                 .map(item => ({
                     ...item,
@@ -87,7 +100,7 @@ async function loadBuildingsData() {
 async function loadTagsData() {
     try {
         // 从GitHub加载标签数据
-        const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/tags.json';
+        const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/tags.json?t=' + Date.now();
         const response = await fetch(githubUrl);
         
         if (!response.ok) {
@@ -197,13 +210,6 @@ async function loadSampleData() {
 document.addEventListener('DOMContentLoaded', async function() {
     setupEventListeners();
     setupMobileMenu();
-    
-    // 检查是否有搜索参数
-    const urlParams = new URLSearchParams(window.location.search);
-    const searchParam = urlParams.get('search');
-    if (searchParam) {
-        document.getElementById('searchInput').value = decodeURIComponent(searchParam);
-    }
     
     // 加载标签数据
     await loadTagsData();

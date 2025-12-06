@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
 async function loadStatistics() {
     try {
         // 从GitHub加载数据
-        const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/content_data.json';
+        const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/content_data.json?t=' + Date.now();
         const response = await fetch(githubUrl);
         
         if (!response.ok) {

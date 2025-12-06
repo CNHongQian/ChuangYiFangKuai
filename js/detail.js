@@ -80,26 +80,49 @@ function getWorkTags(tags) {
 // 加载建筑数据（如果尚未加载）
 async function loadBuildingsData() {
     try {
-        // 尝试从GitHub仓库加载数据
-        const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/content_data.json';
-        const response = await fetch(githubUrl);
+        // 尝试从GitHub仓库加载数据，添加时间戳防止缓存
+        const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/content_data.json?t=' + Date.now();
+        console.log('详情页面尝试从GitHub加载数据:', githubUrl);
+        
+        // 添加超时控制
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+        
+        const response = await fetch(githubUrl, {
+            signal: controller.signal,
+            mode: 'cors'
+        });
+        
+        clearTimeout(timeoutId);
+        
+        console.log('详情页面GitHub响应状态:', response.status, response.statusText);
         
         if (!response.ok) {
-            throw new Error('无法从GitHub加载数据文件');
+            throw new Error(`GitHub请求失败: ${response.status} ${response.statusText}`);
         }
         
         const data = await response.json();
-        // 处理数据结构，添加缺失的默认值
-        buildingsData = data.map(item => ({
-            ...item,
-            type: item.type || item.category || 'building',
-            downloads: item.downloads || 0,
-            likes: item.likes || 0,
-            views: item.views || 0
-        }));
-        console.log('详情页面从GitHub加载数据成功:', buildingsData.length, '个作品');
+        console.log('详情页面GitHub原始数据:', data);
+        console.log('详情页面数据总数:', data.length);
+        
+        if (data && data.length > 0) {
+            // 处理数据结构，添加缺失的默认值
+            buildingsData = data.map(item => ({
+                ...item,
+                type: item.type || item.category || 'building',
+                downloads: item.downloads || 0,
+                likes: item.likes || 0,
+                views: item.views || 0
+            }));
+            console.log('详情页面从GitHub加载数据成功:', buildingsData.length, '个作品');
+            return;
+        }
     } catch (error) {
-        console.error('从GitHub加载数据失败，尝试本地数据:', error);
+        if (error.name === 'AbortError') {
+            console.error('详情页面GitHub请求超时:', error);
+        } else {
+            console.error('详情页面从GitHub加载数据失败，尝试本地数据:', error);
+        }
         
         // 如果GitHub加载失败，尝试本地数据
         try {
@@ -117,7 +140,7 @@ async function loadBuildingsData() {
             }));
             console.log('详情页面从本地加载数据成功:', buildingsData.length, '个作品');
         } catch (localError) {
-            console.error('本地数据也加载失败:', localError);
+            console.error('详情页面本地数据也加载失败:', localError);
             buildingsData = [];
         }
     }
