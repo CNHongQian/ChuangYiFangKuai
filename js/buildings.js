@@ -11,7 +11,7 @@ async function loadBuildingsData() {
     
     // 只从GitHub加载数据
     try {
-        const githubUrl = 'https://raw.githubusercontent.com/CNHongQian/ChuangYiFangKuai/main/data/content_data.json';
+        const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/content_data.json';
         console.log('尝试从GitHub加载数据:', githubUrl);
         
         // 添加超时控制

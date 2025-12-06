@@ -5,7 +5,7 @@ let toolsPageData = [];
 async function loadToolsData() {
     try {
         // 尝试从GitHub仓库加载数据
-        const githubUrl = 'https://raw.githubusercontent.com/CNHongQian/ChuangYiFangKuai/main/data/content_data.json';
+        const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/content_data.json';
         const response = await fetch(githubUrl);
         
         if (!response.ok) {
