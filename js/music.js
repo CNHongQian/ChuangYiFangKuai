@@ -6,6 +6,10 @@ let musicCurrentView = 'grid';
 let musicDisplayedItems = 12;
 const musicItemsPerPage = 12;
 
+// 分页相关变量
+let currentPage = 1;
+let filteredData = [];
+
 // 加载标签数据
 async function loadTagsData() {
     try {
@@ -219,6 +223,23 @@ function setupEventListeners() {
         btn.addEventListener('click', handleViewChange);
     });
     
+    // 分页按钮
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    
+    prevBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+            goToPage(currentPage - 1);
+        }
+    });
+    
+    nextBtn.addEventListener('click', () => {
+        const totalPages = Math.ceil(filteredData.length / musicItemsPerPage);
+        if (currentPage < totalPages) {
+            goToPage(currentPage + 1);
+        }
+    });
+    
     // 模态框关闭按钮
     const closeBtn = document.querySelector('.close');
     closeBtn.addEventListener('click', closeModal);
@@ -237,11 +258,12 @@ function renderMusic() {
     const grid = document.getElementById('buildingsGrid');
     grid.innerHTML = '';
     
-    let dataToShow = [...musicPageData];
+    // 应用过滤和搜索
+    filteredData = [...musicPageData];
     
     // 应用标签过滤
     if (musicCurrentFilter !== 'all') {
-        dataToShow = dataToShow.filter(item => {
+        filteredData = filteredData.filter(item => {
             // 检查标签名称是否匹配
             if (item.tags && Array.isArray(item.tags)) {
                 const matchingTags = item.tags.map(tagId => {
@@ -258,25 +280,121 @@ function renderMusic() {
     // 应用搜索
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     if (searchTerm) {
-        dataToShow = dataToShow.filter(item => 
+        filteredData = filteredData.filter(item => 
             (item.title && item.title.toLowerCase().includes(searchTerm)) ||
             (item.author && item.author.toLowerCase().includes(searchTerm)) ||
             (item.description && item.description.toLowerCase().includes(searchTerm))
         );
     }
     
-    // 显示所有匹配的项目（不限制数量）
-    const itemsToDisplay = dataToShow;
+    // 重置当前页为第一页（当过滤条件改变时）
+    currentPage = 1;
+    
+    // 渲染分页内容
+    renderPaginatedItems();
+    // 渲染分页控件
+    renderPagination();
+}
+
+function renderPaginatedItems() {
+    const grid = document.getElementById('buildingsGrid');
+    grid.innerHTML = '';
+    
+    // 计算当前页的起始和结束索引
+    const startIndex = (currentPage - 1) * musicItemsPerPage;
+    const endIndex = startIndex + musicItemsPerPage;
+    const itemsToDisplay = filteredData.slice(startIndex, endIndex);
+    
+    if (itemsToDisplay.length === 0) {
+        grid.innerHTML = '<div style="text-align: center; padding: 3rem; color: #666; grid-column: 1 / -1; width: 100%; display: flex; justify-content: center; align-items: center;">没有找到相关音乐作品</div>';
+        return;
+    }
     
     itemsToDisplay.forEach((music, index) => {
         const card = createMusicCard(music);
         card.style.animationDelay = `${index * 0.1}s`;
         grid.appendChild(card);
     });
+}
+
+function renderPagination() {
+    const totalPages = Math.ceil(filteredData.length / musicItemsPerPage);
+    const paginationNumbers = document.getElementById('paginationNumbers');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const paginationInfo = document.getElementById('paginationInfo');
     
-    if (itemsToDisplay.length === 0) {
-        grid.innerHTML = '<div style="text-align: center; padding: 3rem; color: #666; grid-column: 1 / -1; width: 100%; display: flex; justify-content: center; align-items: center;">没有找到相关音乐作品</div>';
+    // 清空页码按钮
+    paginationNumbers.innerHTML = '';
+    
+    // 生成页码按钮
+    const maxVisiblePages = 5; // 最多显示5个页码
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    // 调整起始页，确保始终显示maxVisiblePages个页码（如果总页数足够）
+    if (endPage - startPage + 1 < maxVisiblePages && totalPages >= maxVisiblePages) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
     }
+    
+    // 添加第一页和省略号
+    if (startPage > 1) {
+        addPageButton(1);
+        if (startPage > 2) {
+            const ellipsis = document.createElement('span');
+            ellipsis.className = 'pagination-ellipsis';
+            ellipsis.textContent = '...';
+            paginationNumbers.appendChild(ellipsis);
+        }
+    }
+    
+    // 添加中间页码
+    for (let i = startPage; i <= endPage; i++) {
+        addPageButton(i);
+    }
+    
+    // 添加省略号和最后一页
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            const ellipsis = document.createElement('span');
+            ellipsis.className = 'pagination-ellipsis';
+            ellipsis.textContent = '...';
+            paginationNumbers.appendChild(ellipsis);
+        }
+        addPageButton(totalPages);
+    }
+    
+    function addPageButton(pageNum) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = 'pagination-btn';
+        if (pageNum === currentPage) {
+            pageBtn.classList.add('active');
+        }
+        pageBtn.textContent = pageNum;
+        pageBtn.onclick = () => goToPage(pageNum);
+        paginationNumbers.appendChild(pageBtn);
+    }
+    
+    // 更新上一页/下一页按钮状态
+    prevBtn.disabled = currentPage === 1;
+    nextBtn.disabled = currentPage === totalPages || totalPages === 0;
+    
+    // 更新分页信息
+    const startItem = filteredData.length === 0 ? 0 : (currentPage - 1) * musicItemsPerPage + 1;
+    const endItem = Math.min(currentPage * musicItemsPerPage, filteredData.length);
+    paginationInfo.textContent = `显示第 ${startItem}-${endItem} 项，共 ${filteredData.length} 项`;
+}
+
+function goToPage(pageNum) {
+    currentPage = pageNum;
+    renderPaginatedItems();
+    renderPagination();
+    
+    // 滚动到顶部
+    window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+    });
 }
 
 // 获取作品标签名称

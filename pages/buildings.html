@@ -80,7 +80,23 @@
                     <!-- 建筑卡片将通过JavaScript动态生成 -->
                 </div>
                 
-                
+                <!-- 分页控件 -->
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        <span id="paginationInfo">显示第 1-12 项，共 0 项</span>
+                    </div>
+                    <div class="pagination" id="pagination">
+                        <button class="pagination-btn" id="prevBtn" disabled>
+                            <i class="fas fa-chevron-left"></i> 上一页
+                        </button>
+                        <div class="pagination-numbers" id="paginationNumbers">
+                            <!-- 页码按钮将通过JavaScript动态生成 -->
+                        </div>
+                        <button class="pagination-btn" id="nextBtn">
+                            下一页 <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
         </section>
     </main>
