@@ -54,8 +54,8 @@ async function loadToolsData() {
 // 加载标签数据
 async function loadTagsData() {
     try {
-        // 从GitHub加载标签数据
-        const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/tags.json';
+        // 从GitHub加载标签数据，添加时间戳防止缓存
+        const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/tags.json?t=' + Date.now();
         const response = await fetch(githubUrl);
         
         if (!response.ok) {

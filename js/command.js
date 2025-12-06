@@ -14,7 +14,7 @@ let filteredData = [];
 async function loadTagsData() {
     try {
         // 从GitHub加载标签数据
-        const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/tags.json';
+        const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/tags.json?t=' + Date.now();
         const response = await fetch(githubUrl);
         
         if (!response.ok) {
