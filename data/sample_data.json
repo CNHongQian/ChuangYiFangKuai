@@ -1,0 +1,40 @@
+[
+  {
+    "id": 1,
+    "title": "梦幻城堡",
+    "author": "建筑师小明",
+    "type": "building",
+    "category": "medieval",
+    "image": "https://via.placeholder.com/300x200/ff69b4/ffffff?text=梦幻城堡",
+    "coverImage": "https://via.placeholder.com/300x200/ff69b4/ffffff?text=梦幻城堡",
+    "description": "一座美丽的中世纪城堡，拥有高耸的塔楼和精美的装饰。这个建筑采用了经典的哥特式风格，配有宏伟的大厅、舒适的客房和防御工事。",
+    "size": "15.2 MB",
+    "buildingSize": "64x64x80",
+    "date": "2025-11-28"
+  },
+  {
+    "id": 2,
+    "title": "现代别墅",
+    "author": "设计师小红",
+    "type": "building",
+    "category": "modern",
+    "image": "https://via.placeholder.com/300x200/ff1493/ffffff?text=现代别墅",
+    "coverImage": "https://via.placeholder.com/300x200/ff1493/ffffff?text=现代别墅",
+    "description": "极简主义的现代别墅设计，采用大面积玻璃窗和开放式布局。包含游泳池、花园和智能家居系统。",
+    "size": "8.7 MB",
+    "buildingSize": "50x50x30",
+    "date": "2025-11-27"
+  },
+  {
+    "id": 3,
+    "title": "红石电路生成器",
+    "author": "技术大神",
+    "type": "tool",
+    "category": "redstone",
+    "image": "https://via.placeholder.com/300x200/c71585/ffffff?text=红石工具",
+    "coverImage": "https://via.placeholder.com/300x200/c71585/ffffff?text=红石工具",
+    "description": "强大的红石电路生成器工具，可以自动生成各种复杂的红石电路，包括逻辑门、计数器和时钟电路。",
+    "size": "2.3 MB",
+    "date": "2025-11-26"
+  }
+]

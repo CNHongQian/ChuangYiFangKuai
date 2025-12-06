@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="cubeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff69b4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ff1493;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="topFace" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffb6c1;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ff69b4;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- 立方体主体 -->
+  <g transform="translate(6,8)">
+    <!-- 前面 -->
+    <path d="M 0 8 L 0 16 L 8 20 L 8 12 Z" fill="url(#cubeGradient)" />
+    
+    <!-- 右侧面 -->
+    <path d="M 8 12 L 8 20 L 16 16 L 16 8 Z" fill="#ff1493" />
+    
+    <!-- 顶面 -->
+    <path d="M 0 8 L 8 4 L 16 8 L 8 12 Z" fill="url(#topFace)" />
+  </g>
+  
+  <!-- 装饰性小方块 -->
+  <g transform="translate(18,6)">
+    <rect x="0" y="0" width="6" height="6" fill="#ff69b4" opacity="0.8" rx="1" />
+    <rect x="8" y="2" width="4" height="4" fill="#ff1493" opacity="0.6" rx="1" />
+    <rect x="2" y="8" width="4" height="4" fill="#ffb6c1" opacity="0.7" rx="1" />
+  </g>
+  
+  <!-- 底部文字 -->
+  <text x="16" y="28" font-family="Arial, sans-serif" font-size="4" font-weight="bold" text-anchor="middle" fill="#ff1493">创艺方块</text>
+</svg>

@@ -1,0 +1,67 @@
+{
+  "tags": [
+    {
+      "id": 1,
+      "name": "现代",
+      "category": "building",
+      "description": "现代风格的建筑作品",
+      "color": "#4CAF50"
+    },
+    {
+      "id": 2,
+      "name": "中世纪",
+      "category": "building",
+      "description": "中世纪风格的建筑作品",
+      "color": "#FF9800"
+    },
+    {
+      "id": 3,
+      "name": "像素",
+      "category": "building",
+      "description": "像素艺术风格的作品",
+      "color": "#2196F3"
+    },
+    {
+      "id": 4,
+      "name": "奇幻",
+      "category": "building",
+      "description": "奇幻风格的建筑作品",
+      "color": "#9C27B0"
+    },
+    {
+      "id": 5,
+      "name": "传统",
+      "category": "building",
+      "description": "传统风格的建筑作品",
+      "color": "#795548"
+    },
+    {
+      "id": 15,
+      "name": "pvp",
+      "category": "building",
+      "description": "pvp的地图作品",
+      "color": "#2196F3"
+    },
+    {
+      "id": 16,
+      "name": "城市",
+      "category": "building",
+      "description": "城市风格的建筑作品",
+      "color": "#FF9800"
+    },
+    {
+      "id": 17,
+      "name": "空岛",
+      "category": "building",
+      "description": "空岛的地图作品",
+      "color": "#2196F3"
+    },
+    {
+      "id": 18,
+      "name": "导入",
+      "category": "tool",
+      "description": "导入工具",
+      "color": "#4CAF50"
+    }
+  ]
+}

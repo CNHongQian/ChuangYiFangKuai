@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音乐资源 - 创艺方块</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
+</head>
+<body>
+    <div class="background-animation"></div>
+    
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-cube"></i>
+                <h1>创艺方块</h1>
+            </div>
+            <button class="mobile-menu-btn" id="mobileMenuBtn">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <nav class="nav" id="navMenu">
+                <a href="../index.html" class="nav-link">首页</a>
+                <a href="buildings.html" class="nav-link">建筑</a>
+                <a href="tools.html" class="nav-link">工具</a>
+                <a href="music.html" class="nav-link active">音乐</a>
+                <a href="command.html" class="nav-link">指令</a>
+                <a href="about.html" class="nav-link">关于</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <section class="hero">
+            <div class="container">
+                <h2 class="hero-title">
+                    <span class="gradient-text">精美音乐作品</span>
+                    <br>聆听游戏之声
+                </h2>
+                <p class="hero-subtitle">发现来自世界各地音乐人的精彩音乐作品</p>
+                
+                <div class="search-container">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="searchInput" placeholder="搜索音乐作品或作者...">
+                        <button class="search-btn">搜索</button>
+                    </div>
+                    <div class="filter-buttons">
+                        <button class="filter-btn active" data-filter="all">全部</button>
+                        <button class="filter-btn" data-filter="building">建筑</button>
+                        <button class="filter-btn" data-filter="tool">工具</button>
+                        <button class="filter-btn" data-filter="music">音乐</button>
+                        <button class="filter-btn" data-filter="command">指令</button>
+                        <button class="refresh-btn" id="randomRefresh">
+                            <i class="fas fa-random"></i> 随机刷新
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="buildings-section">
+            <div class="container">
+                <div class="section-header">
+                    <h3 class="section-title">音乐作品</h3>
+                    <div class="view-options">
+                        <button class="view-btn active" data-view="grid">
+                            <i class="fas fa-th"></i>
+                        </button>
+                        <button class="view-btn" data-view="list">
+                            <i class="fas fa-list"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="buildings-grid" id="buildingsGrid">
+                    <!-- 音乐卡片将通过JavaScript动态生成 -->
+                </div>
+                
+                <div class="load-more-container">
+                    <button class="load-more-btn">加载更多</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>创艺方块</h4>
+                    <p>分享创意，构建世界</p>
+                </div>
+                <div class="footer-section">
+                    <h4>快速链接</h4>
+                    <ul>
+                        <li><a href="buildings.html">热门建筑</a></li>
+                        <li><a href="tools.html">最新工具</a></li>
+                        <li><a href="music.html">精选音乐</a></li>
+                        <li><a href="command.html">实用指令</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>联系我们</h4>
+                    <p>584415030</p>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2025 创艺方块. 保留所有权利.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 详细信息模态框 -->
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div class="modal-body">
+                <div class="detail-header">
+                    <img id="detailImage" src="" alt="">
+                    <div class="detail-info">
+                        <h2 id="detailTitle"></h2>
+                        <div class="detail-meta">
+                            <span class="detail-author"><i class="fas fa-user"></i> <span id="detailAuthor"></span></span>
+                            <span class="detail-date"><i class="fas fa-calendar"></i> <span id="detailDate"></span></span>
+                            <span class="detail-size"><i class="fas fa-file"></i> <span id="detailSize"></span></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="detail-description">
+                    <h3>作品介绍</h3>
+                    <p id="detailDescription"></p>
+                </div>
+                <div class="detail-stats">
+                    <div class="stat-item">
+                        <i class="fas fa-download"></i>
+                        <span id="detailDownloads"></span>
+                        <p>下载次数</p>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-heart"></i>
+                        <span id="detailLikes"></span>
+                        <p>收藏次数</p>
+                    </div>
+                    <div class="stat-item">
+                        <i class="fas fa-eye"></i>
+                        <span id="detailViews"></span>
+                        <p>浏览次数</p>
+                    </div>
+                </div>
+                <div class="detail-actions">
+                    <button class="btn btn-primary">
+                        <i class="fas fa-download"></i> 下载文件
+                    </button>
+                    <button class="btn btn-secondary">
+                        <i class="fas fa-heart"></i> 收藏
+                    </button>
+                    <button class="btn btn-secondary">
+                        <i class="fas fa-share"></i> 分享
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="../js/script.js"></script>
+    <script src="../js/music.js"></script>
+</body>
+</html>
