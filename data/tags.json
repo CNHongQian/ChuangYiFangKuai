@@ -60,8 +60,22 @@
       "id": 18,
       "name": "导入",
       "category": "tool",
-      "description": "导入工具",
+      "description": "导入的工具",
       "color": "#4CAF50"
+    },
+    {
+      "id": 19,
+      "name": "转换",
+      "category": "tool",
+      "description": "用于建筑文件直接的转换的工具",
+      "color": "#FF9800"
+    },
+    {
+      "id": 20,
+      "name": "cookie",
+      "category": "tool",
+      "description": "获取cookie的工具",
+      "color": "#9C27B0"
     }
   ]
 }

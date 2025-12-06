@@ -172,6 +172,8 @@ function displayWorkDetail() {
     document.getElementById('detailCategory').textContent = getWorkTags(currentWork.tags);
     document.getElementById('detailFileSize').textContent = currentWork.size || currentWork.fileSize || '未知';
     document.getElementById('detailFileFormat').textContent = currentWork.fileFormat || '未知';
+    document.getElementById('detailVersion').textContent = currentWork.version || '未知';
+    document.getElementById('detailUploader').textContent = currentWork.uploader || '未知';
     document.getElementById('detailDate').textContent = currentWork.date;
     // 处理作品介绍中的换行符
     const descriptionElement = document.getElementById('detailDescription');

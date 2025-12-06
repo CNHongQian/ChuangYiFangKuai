@@ -386,12 +386,6 @@ function handleFilter(event) {
 function handleRandomRefresh() {
     buildingsPageData = [...buildingsPageData].sort(() => Math.random() - 0.5);
     renderBuildings();
-    
-    const refreshBtn = document.getElementById('randomRefresh');
-    refreshBtn.style.transform = 'rotate(360deg)';
-    setTimeout(() => {
-        refreshBtn.style.transform = 'rotate(0deg)';
-    }, 500);
 }
 
 // 视图切换

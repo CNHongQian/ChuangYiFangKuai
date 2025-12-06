@@ -344,25 +344,9 @@ function getTypeName(type) {
 
 // 随机刷新处理
 function handleRandomRefresh() {
-    // 随机排序数据
-    const shuffled = [...buildingsData].sort(() => Math.random() - 0.5);
-    buildingsData.length = 0; // 清空原数组
-    buildingsData.push(...shuffled); // 添加随机排序的数据
-    
-    // 重置显示数量
-    displayedItems[currentSection] = itemsPerPage;
-    
-    // 重新渲染
-    renderBuildings();
-    
-    // 添加动画效果
-    const refreshBtn = document.getElementById('randomRefresh');
-    if (refreshBtn) {
-        refreshBtn.style.transform = 'rotate(360deg)';
-        setTimeout(() => {
-            refreshBtn.style.transform = 'rotate(0deg)';
-        }, 500);
-    }
+    // 随机打乱数据
+    buildingsData = [...buildingsData].sort(() => Math.random() - 0.5);
+    renderContent();
 }
 
 // 搜索处理
