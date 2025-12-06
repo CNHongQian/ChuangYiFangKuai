@@ -1,16 +1,20 @@
 {
   "title": "中世纪古堡",
   "author": "未知",
+  "uploader": "虹芡[3299229255]",
   "category": "building",
   "description": "中世纪古堡",
   "size": "0.2 MB",
   "buildingSize": "未知",
+  "version": "1.0.0",
   "date": "2025-12-05",
   "tags": [
     2
   ],
   "id": 1,
   "fileName": "1.schem",
+  "fileFormat": "schem",
+  "fileUrl": "",
   "image": "image/1/preview.jpg",
   "coverImage": "image/1/cover.jpg"
 }

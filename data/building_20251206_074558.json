@@ -1,10 +1,12 @@
 {
   "title": "石室圣心大教堂",
   "author": "未知",
+  "uploader": "虹芡[3299229255]",
   "category": "building",
   "description": "石室圣心大教堂",
   "size": "0.1 MB",
   "buildingSize": "未知",
+  "version": "1.0.0",
   "date": "2025-12-06",
   "tags": [
     2
@@ -12,6 +14,7 @@
   "id": 2,
   "fileName": "2.schem",
   "fileFormat": "schem",
+  "fileUrl": "",
   "image": "image/2/preview.jpg",
   "coverImage": "image/2/cover.jpg"
 }

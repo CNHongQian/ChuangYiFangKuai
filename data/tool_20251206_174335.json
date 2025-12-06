@@ -1,10 +1,12 @@
 {
   "title": "MPay",
   "author": "未知",
+  "uploader": "虹芡[3299229255]",
   "category": "tool",
   "description": "获取cookie的工具",
   "size": "11.7 MB",
   "buildingSize": "无",
+  "version": "1.0.0",
   "date": "2025-12-06",
   "tags": [
     20
@@ -12,6 +14,7 @@
   "id": 8,
   "fileName": "8.zip",
   "fileFormat": "zip",
+  "fileUrl": "",
   "image": "image/8/preview.png",
   "coverImage": "image/8/cover.png"
 }
