@@ -155,7 +155,9 @@ function setupEventListeners() {
     
     // 模态框关闭按钮
     const closeBtn = document.querySelector('.close');
-    closeBtn.addEventListener('click', closeModal);
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeModal);
+    }
     
     // 点击模态框外部关闭
     const modal = document.getElementById('detailModal');

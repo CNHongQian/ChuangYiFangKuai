@@ -1,5 +1,10 @@
 // 详情页面专用JavaScript
 let currentWork = null;
+let currentImageIndex = 0;
+let imageRotation = 0;
+let imageScale = 1;
+let isDragging = false;
+let startX, startY, scrollLeft, scrollTop;
 
 // 初始化详情页面
 document.addEventListener('DOMContentLoaded', async function() {
@@ -131,6 +136,9 @@ function displayWorkDetail() {
         this.src = 'https://via.placeholder.com/400x300/ff69b4/ffffff?text=暂无图片';
     };
     
+    // 添加主图点击事件
+    mainImage.addEventListener('click', openImageModal);
+    
     // 生成缩略图
     generateThumbnails();
     
@@ -145,16 +153,21 @@ function generateThumbnails() {
     
     thumbnailGrid.innerHTML = '';
     
-    // 创建多个缩略图（示例）
+    // 创建多个缩略图
     const thumbnails = [
         currentWork.coverImage,
         currentWork.image,
         // 可以添加更多图片URL
-    ];
+    ].filter(img => img); // 过滤掉空值
+    
+    // 如果没有足够的图片，使用同一图片创建多个缩略图
+    if (thumbnails.length === 1) {
+        for (let i = 0; i < 4; i++) {
+            thumbnails.push(thumbnails[0]);
+        }
+    }
     
     thumbnails.forEach((src, index) => {
-        if (!src) return;
-        
         const thumbnail = document.createElement('img');
         // 处理图片路径
         let thumbnailSrc = src;
@@ -165,15 +178,24 @@ function generateThumbnails() {
         thumbnail.src = thumbnailSrc;
         thumbnail.alt = `${currentWork.title} - 图片 ${index + 1}`;
         thumbnail.className = 'thumbnail';
-        if (index === 0) thumbnail.classList.add('active');
+        if (index === 0) {
+            thumbnail.classList.add('active');
+            currentImageIndex = 0;
+        }
         
         thumbnail.addEventListener('click', function() {
             // 更新主图，使用处理后的路径
-            document.getElementById('mainImage').src = thumbnailSrc;
+            const mainImage = document.getElementById('mainImage');
+            mainImage.src = thumbnailSrc;
+            currentImageIndex = index;
             
             // 更新活动状态
             document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
             this.classList.add('active');
+            
+            // 重置放大状态
+            imageScale = 1;
+            imageRotation = 0;
         });
         
         // 添加错误处理
@@ -493,3 +515,171 @@ style.textContent = `
     }
 `;
 document.head.appendChild(style);
+
+// 图片放大相关功能
+function openImageModal() {
+    const modal = document.getElementById('imageModal');
+    const modalImage = document.getElementById('modalImage');
+    const mainImage = document.getElementById('mainImage');
+    
+    modalImage.src = mainImage.src;
+    modalImage.alt = mainImage.alt;
+    modal.style.display = 'block';
+    
+    // 重置缩放和旋转
+    imageScale = 1;
+    imageRotation = 0;
+    updateImageTransform();
+    
+    // 添加拖动功能
+    setupImageDrag();
+    
+    // 防止背景滚动
+    document.body.style.overflow = 'hidden';
+}
+
+function closeImageModal() {
+    const modal = document.getElementById('imageModal');
+    modal.style.display = 'none';
+    document.body.style.overflow = 'auto';
+}
+
+function toggleZoom() {
+    const mainImage = document.getElementById('mainImage');
+    if (mainImage.style.cursor === 'zoom-out') {
+        // 缩小
+        mainImage.style.transform = 'scale(1)';
+        mainImage.style.cursor = 'zoom-in';
+    } else {
+        // 放大
+        mainImage.style.transform = 'scale(1.5)';
+        mainImage.style.cursor = 'zoom-out';
+    }
+}
+
+function zoomIn() {
+    imageScale = Math.min(imageScale + 0.2, 3);
+    updateImageTransform();
+}
+
+function zoomOut() {
+    imageScale = Math.max(imageScale - 0.2, 0.5);
+    updateImageTransform();
+}
+
+function resetZoom() {
+    imageScale = 1;
+    imageRotation = 0;
+    updateImageTransform();
+}
+
+function rotateImage() {
+    imageRotation += 90;
+    updateImageTransform();
+}
+
+function updateImageTransform() {
+    const modalImage = document.getElementById('modalImage');
+    modalImage.style.transform = `scale(${imageScale}) rotate(${imageRotation}deg)`;
+}
+
+// 设置图片拖动功能
+function setupImageDrag() {
+    const modalImage = document.getElementById('modalImage');
+    
+    modalImage.onmousedown = dragStart;
+    modalImage.onmouseup = dragEnd;
+    modalImage.onmouseleave = dragEnd;
+    modalImage.onmousemove = drag;
+    
+    // 触摸事件支持
+    modalImage.ontouchstart = dragStart;
+    modalImage.ontouchend = dragEnd;
+    modalImage.ontouchmove = drag;
+}
+
+function dragStart(e) {
+    e.preventDefault();
+    isDragging = true;
+    
+    const modalImage = document.getElementById('modalImage');
+    
+    if (e.type === 'touchstart') {
+        startX = e.touches[0].clientX - modalImage.offsetLeft;
+        startY = e.touches[0].clientY - modalImage.offsetTop;
+    } else {
+        startX = e.clientX - modalImage.offsetLeft;
+        startY = e.clientY - modalImage.offsetTop;
+    }
+    
+    modalImage.style.cursor = 'grabbing';
+}
+
+function dragEnd(e) {
+    isDragging = false;
+    const modalImage = document.getElementById('modalImage');
+    modalImage.style.cursor = 'grab';
+}
+
+function drag(e) {
+    if (!isDragging) return;
+    e.preventDefault();
+    
+    const modalImage = document.getElementById('modalImage');
+    let x, y;
+    
+    if (e.type === 'touchmove') {
+        x = e.touches[0].clientX - startX;
+        y = e.touches[0].clientY - startY;
+    } else {
+        x = e.clientX - startX;
+        y = e.clientY - startY;
+    }
+    
+    // 限制拖动范围
+    const rect = modalImage.parentElement.getBoundingClientRect();
+    const imgRect = modalImage.getBoundingClientRect();
+    
+    // 计算最大拖动距离
+    const maxX = rect.width - imgRect.width;
+    const maxY = rect.height - imgRect.height;
+    
+    // 应用限制
+    x = Math.max(maxX, Math.min(0, x));
+    y = Math.max(maxY, Math.min(0, y));
+    
+    modalImage.style.left = x + 'px';
+    modalImage.style.top = y + 'px';
+}
+
+// ESC键关闭模态框
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('imageModal');
+        if (modal.style.display === 'block') {
+            closeImageModal();
+        }
+    }
+});
+
+// 点击模态框背景关闭
+document.getElementById('imageModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeImageModal();
+    }
+});
+
+// 添加鼠标滚轮缩放功能
+document.getElementById('modalImage').addEventListener('wheel', function(e) {
+    e.preventDefault();
+    
+    if (e.deltaY < 0) {
+        // 向上滚动，放大
+        imageScale = Math.min(imageScale + 0.1, 3);
+    } else {
+        // 向下滚动，缩小
+        imageScale = Math.max(imageScale - 0.1, 0.5);
+    }
+    
+    updateImageTransform();
+});
