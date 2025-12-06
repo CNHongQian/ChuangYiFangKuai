@@ -174,6 +174,7 @@ function displayWorkDetail() {
     document.getElementById('detailFileFormat').textContent = currentWork.fileFormat || '未知';
     document.getElementById('detailVersion').textContent = currentWork.version || '未知';
     document.getElementById('detailUploader').textContent = currentWork.uploader || '未知';
+    document.getElementById('detailId').textContent = currentWork.id || '未知';
     document.getElementById('detailDate').textContent = currentWork.date;
     // 处理作品介绍中的换行符
     const descriptionElement = document.getElementById('detailDescription');
@@ -414,37 +415,55 @@ function goBack() {
 // 下载文件
 function downloadFile() {
     if (currentWork) {
-        // 检查是否有文件名
-        if (!currentWork.fileName) {
+        // 检查是否有文件名或文件URL
+        if (!currentWork.fileName && !currentWork.fileUrl) {
             showNotification('该作品暂无下载文件', 'error');
             return;
         }
         
         showNotification(`正在下载 ${currentWork.title}...`, 'info');
         
-        // 根据作品类型构建文件下载URL
-        let downloadPath;
-        if (currentWork.type === 'building' || currentWork.category === 'building') {
-            downloadPath = `building/${currentWork.fileName}`;
-        } else if (currentWork.type === 'tool' || currentWork.category === 'tool') {
-            downloadPath = `tool/${currentWork.fileName}`;
-        } else if (currentWork.type === 'music' || currentWork.category === 'music') {
-            downloadPath = `music/${currentWork.fileName}`;
-        } else if (currentWork.type === 'command' || currentWork.category === 'command') {
-            downloadPath = `command/${currentWork.fileName}`;
+        let downloadUrl;
+        let downloadFileName;
+        
+        // 优先使用文件URL
+        if (currentWork.fileUrl && currentWork.fileUrl.trim() !== '') {
+            downloadUrl = currentWork.fileUrl;
+            // 从URL中提取文件名，如果没有则使用作品标题
+            try {
+                const urlPath = new URL(downloadUrl).pathname;
+                downloadFileName = urlPath.split('/').pop() || `${currentWork.title}.${currentWork.fileFormat || 'zip'}`;
+            } catch (e) {
+                downloadFileName = `${currentWork.title}.${currentWork.fileFormat || 'zip'}`;
+            }
         } else {
-            // 默认情况
-            downloadPath = currentWork.fileName;
+            // 使用本地文件
+            // 根据作品类型构建文件下载URL
+            let downloadPath;
+            if (currentWork.type === 'building' || currentWork.category === 'building') {
+                downloadPath = `building/${currentWork.fileName}`;
+            } else if (currentWork.type === 'tool' || currentWork.category === 'tool') {
+                downloadPath = `tool/${currentWork.fileName}`;
+            } else if (currentWork.type === 'music' || currentWork.category === 'music') {
+                downloadPath = `music/${currentWork.fileName}`;
+            } else if (currentWork.type === 'command' || currentWork.category === 'command') {
+                downloadPath = `command/${currentWork.fileName}`;
+            } else {
+                // 默认情况
+                downloadPath = currentWork.fileName;
+            }
+            
+            // 使用jsDelivr CDN加速下载
+            downloadUrl = `https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/${downloadPath}`;
+            downloadFileName = currentWork.fileName;
         }
         
-        // 使用jsDelivr CDN加速下载
-        const downloadUrl = `https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/${downloadPath}`;
         console.log('下载文件URL:', downloadUrl);
         
         // 创建隐藏的下载链接
         const downloadLink = document.createElement('a');
         downloadLink.href = downloadUrl;
-        downloadLink.download = currentWork.fileName;
+        downloadLink.download = downloadFileName;
         downloadLink.style.display = 'none';
         
         // 添加错误处理

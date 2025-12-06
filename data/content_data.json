@@ -15,6 +15,7 @@
     "id": 1,
     "fileName": "1.schem",
     "fileFormat": "schem",
+    "fileUrl": "",
     "image": "image/1/preview.jpg",
     "coverImage": "image/1/cover.jpg"
   },
@@ -34,6 +35,7 @@
     "id": 2,
     "fileName": "2.schem",
     "fileFormat": "schem",
+    "fileUrl": "",
     "image": "image/2/preview.jpg",
     "coverImage": "image/2/cover.jpg"
   },
@@ -53,6 +55,7 @@
     "id": 3,
     "fileName": "3.schem",
     "fileFormat": "schem",
+    "fileUrl": "",
     "image": "image/3/preview.jpg",
     "coverImage": "image/3/cover.jpg"
   },
@@ -72,6 +75,7 @@
     "id": 4,
     "fileName": "4.schematic",
     "fileFormat": "schematic",
+    "fileUrl": "",
     "image": "image/4/preview.jpg",
     "coverImage": "image/4/cover.jpg"
   },
@@ -91,6 +95,7 @@
     "id": 5,
     "fileName": "5.schematic",
     "fileFormat": "schematic",
+    "fileUrl": "",
     "image": "image/5/preview.jpg",
     "coverImage": "image/5/cover.jpg"
   },
@@ -110,6 +115,7 @@
     "id": 6,
     "fileName": "6.schem",
     "fileFormat": "schem",
+    "fileUrl": "",
     "image": "image/6/preview.jpg",
     "coverImage": "image/6/cover.jpg"
   },
@@ -129,6 +135,7 @@
     "id": 7,
     "fileName": "7.zip",
     "fileFormat": "zip",
+    "fileUrl": "",
     "image": "image/7/preview.png",
     "coverImage": "image/7/cover.png"
   },
@@ -148,6 +155,7 @@
     "id": 8,
     "fileName": "8.zip",
     "fileFormat": "zip",
+    "fileUrl": "",
     "image": "image/8/preview.png",
     "coverImage": "image/8/cover.png"
   }
