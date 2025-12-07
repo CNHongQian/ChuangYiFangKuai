@@ -647,12 +647,227 @@ body {
     box-shadow: 0 5px 15px var(--card-hover-shadow);
 }
 
+/* 过滤选项容器 */
+.filter-options {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
 /* 过滤按钮 */
 .filter-buttons {
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
     gap: 10px;
+}
+
+/* 格式筛选 */
+.format-filter {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.format-filter label {
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.format-select {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    padding: 8px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all var(--transition-speed) ease;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    outline: none;
+    cursor: none !important;
+}
+
+.format-select:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.format-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--primary-color33);
+}
+
+/* 确保格式筛选相关元素隐藏默认鼠标 */
+.format-filter,
+.format-filter label,
+.format-select,
+.format-select option,
+select,
+option {
+    cursor: none !important;
+}
+
+/* 当自定义光标启用时，确保所有交互元素隐藏默认鼠标 */
+.custom-cursor-enabled .format-filter,
+.custom-cursor-enabled .format-filter label,
+.custom-cursor-enabled .format-select,
+.custom-cursor-enabled .format-select option,
+.custom-cursor-enabled select,
+.custom-cursor-enabled option {
+    cursor: none !important;
+}
+
+/* 更强制的选择器，确保覆盖所有可能的样式 */
+* select,
+* option,
+* .format-select,
+* .format-select option {
+    cursor: none !important;
+}
+
+.custom-cursor-enabled * select,
+.custom-cursor-enabled * option,
+.custom-cursor-enabled * .format-select,
+.custom-cursor-enabled * .format-select option {
+    cursor: none !important;
+}
+
+/* 自定义下拉菜单样式 */
+.custom-dropdown {
+    position: relative;
+    display: inline-block;
+    min-width: 120px;
+}
+
+.custom-dropdown-trigger {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    padding: 8px 12px;
+    border-radius: 20px;
+    cursor: none;
+    transition: all var(--transition-speed) ease;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    outline: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-width: 120px;
+}
+
+.custom-dropdown-trigger:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-1px);
+}
+
+.custom-dropdown-trigger:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--primary-color33);
+}
+
+.custom-dropdown-arrow {
+    border: solid var(--text-primary);
+    border-width: 0 2px 2px 0;
+    display: inline-block;
+    padding: 3px;
+    transform: rotate(45deg);
+    transition: transform var(--transition-speed) ease;
+}
+
+.custom-dropdown.active .custom-dropdown-arrow {
+    transform: rotate(-135deg);
+}
+
+.custom-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px var(--card-shadow);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    margin-top: 5px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all var(--transition-speed) ease;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.custom-dropdown.active .custom-dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.custom-dropdown-item {
+    padding: 8px 12px;
+    cursor: none;
+    transition: all var(--transition-speed) ease;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--card-border);
+}
+
+.custom-dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.custom-dropdown-item:hover {
+    background: var(--primary-color22);
+    color: var(--primary-color);
+}
+
+.custom-dropdown-item.selected {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* 隐藏原生下拉菜单 */
+.format-select {
+    display: none;
+}
+
+/* 移动端响应式样式 */
+@media (max-width: 768px) {
+    .filter-options {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .filter-buttons {
+        order: 2;
+        width: 100%;
+    }
+    
+    .format-filter {
+        order: 1;
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .refresh-btn {
+        order: 3;
+        width: 100%;
+        margin-left: 0;
+    }
+    
+    .custom-dropdown {
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    .custom-dropdown-trigger {
+        width: 100%;
+    }
 }
 
 .filter-btn {
@@ -727,6 +942,19 @@ body {
     font-weight: bold;
     color: var(--text-primary);
     transition: color var(--transition-speed) ease;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.work-count {
+    font-size: 1rem;
+    font-weight: normal;
+    color: var(--text-secondary);
+    background: var(--primary-light);
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--card-border);
 }
 
 .view-options {

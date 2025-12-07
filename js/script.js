@@ -92,6 +92,7 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 let currentFilter = 'all';
+let currentFormatFilter = 'all'; // 添加格式筛选变量
 let currentView = 'grid';
 let currentSection = 'home'; // 添加缺失的变量
 let displayedItems = {
@@ -245,12 +246,21 @@ function renderBuildings() {
         });
     }
     
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const searchTerm = document.getElementById('searchInput').toLowerCase();
     if (searchTerm) {
         dataToShow = dataToShow.filter(item => 
             item.title.toLowerCase().includes(searchTerm) ||
             item.author.toLowerCase().includes(searchTerm) ||
-            item.description.toLowerCase().includes(searchTerm)
+            item.description.toLowerCase().includes(searchTerm) ||
+            (item.fileFormat && item.fileFormat.toLowerCase().includes(searchTerm))
+        );
+    }
+    
+    // 应用格式筛选
+    if (currentFormatFilter !== 'all') {
+        dataToShow = dataToShow.filter(item => 
+            item.fileFormat === currentFormatFilter || 
+            (item.fileFormat && item.fileFormat.toLowerCase().includes(currentFormatFilter))
         );
     }
     
@@ -299,8 +309,19 @@ function createBuildingCard(building) {
     const typeTag = getTypeName(building.type);
     const categoryTag = getCategoryName(building.category);
     
+    // 处理图片路径，使用CDN地址
+    let imagePath = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/img/none.png'; // 默认图片
+    if (building.image && building.image.trim() !== '') {
+        // 如果是相对路径，添加CDN前缀
+        if (!building.image.startsWith('http')) {
+            imagePath = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/' + building.image;
+        } else {
+            imagePath = building.image;
+        }
+    }
+    
     card.innerHTML = `
-        <img src="${building.image}" alt="${building.title}" class="building-image">
+        <img src="${imagePath}" alt="${building.title}" class="building-image" onerror="this.src='https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/img/none.png'">
         <div class="building-info">
             <h3 class="building-title">${building.title}</h3>
             <p class="building-author">作者: ${building.author}</p>
@@ -356,6 +377,20 @@ function handleSearch() {
     renderBuildings();
 }
 
+// 格式筛选功能
+function handleFormatFilter() {
+    const formatButtons = document.querySelectorAll('.format-btn');
+    formatButtons.forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    currentFormatFilter = event.target.dataset.format;
+    
+    // 重置显示数量
+    displayedItems[currentSection] = itemsPerPage;
+    
+    renderBuildings();
+}
+
 // 过滤处理
 function handleFilter(event) {
     // 更新按钮状态
@@ -363,7 +398,22 @@ function handleFilter(event) {
     filterButtons.forEach(btn => btn.classList.remove('active'));
     event.target.classList.add('active');
     
-    currentFilter = event.target.dataset.filter;
+    currentFilter = event.target.filter;
+    
+    // 重置显示数量
+    displayedItems[currentSection] = itemsPerPage;
+    
+    renderBuildings();
+}
+
+// 格式筛选处理
+function handleFormatFilter(event) {
+    // 更新按钮状态
+    const formatButtons = document.querySelectorAll('.format-btn');
+    formatButtons.forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+    
+    currentFormatFilter = event.target.dataset.format;
     
     // 重置显示数量
     displayedItems[currentSection] = itemsPerPage;

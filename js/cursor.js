@@ -22,7 +22,7 @@ class CustomCursor {
     }
 
     init() {
-        // 从本地存储加载设置
+        // 从cookie加载设置
         this.loadSettings();
         
         console.log('初始化自定义光标 - 启用状态:', this.isEnabled, '粒子启用:', this.particlesEnabled);
@@ -35,10 +35,16 @@ class CustomCursor {
             if (this.particlesEnabled) {
                 this.startParticleTrail();
             }
+            
+            // 添加全局样式来强制隐藏下拉菜单的默认光标
+            this.addGlobalCursorHidingStyles();
         } else {
             // 如果禁用，确保清理任何残留的光标元素
             this.cleanup();
         }
+        
+        // 验证初始化后的状态
+        console.log('初始化完成 - 光标启用:', this.isEnabled, '粒子启用:', this.particlesEnabled);
     }
 
     detectPC() {
@@ -50,12 +56,20 @@ class CustomCursor {
         // 从cookie加载设置
         const savedSettings = this.getCookie('customCursorSettings');
         if (savedSettings) {
-            const settings = JSON.parse(savedSettings);
-            // 直接从存储加载设置，严格判断布尔值
-            this.isEnabled = settings.enabled === true;
-            this.particlesEnabled = settings.particlesEnabled === true;
-            this.settings = { ...this.settings, ...settings };
-            console.log('从cookie加载设置:', settings);
+            try {
+                const settings = JSON.parse(savedSettings);
+                // 直接从存储加载设置，严格判断布尔值
+                this.isEnabled = settings.enabled === true;
+                this.particlesEnabled = settings.particlesEnabled === true;
+                this.settings = { ...this.settings, ...settings };
+                console.log('从cookie加载设置:', settings);
+            } catch (error) {
+                console.error('解析设置失败:', error);
+                // 默认设置 - 确保光标和粒子都开启
+                this.isEnabled = true;
+                this.particlesEnabled = true;
+                this.saveSettings();
+            }
         } else {
             // 默认设置 - 确保光标和粒子都开启
             this.isEnabled = true;
@@ -75,6 +89,12 @@ class CustomCursor {
         };
         this.setCookie('customCursorSettings', JSON.stringify(settings), 365);
         console.log('保存设置到cookie:', settings);
+        
+        // 验证保存是否成功
+        setTimeout(() => {
+            const saved = this.getCookie('customCursorSettings');
+            console.log('验证保存的设置:', saved);
+        }, 100);
     }
 
     cleanup() {
@@ -183,6 +203,9 @@ class CustomCursor {
         
         // 监听DOM变化，确保新元素也隐藏默认光标
         this.observeDOMChanges();
+        
+        // 强制隐藏所有下拉菜单的默认光标
+        this.forceHideSelectCursors();
     }
 
     updateCursorPosition(x, y) {
@@ -197,7 +220,7 @@ class CustomCursor {
         
         this.particlesEnabled = true; // 启用粒子拖尾
         
-        // 保存状态到本地存储
+        // 保存状态到cookie
         this.saveSettings();
         
         // 清除旧的粒子间隔
@@ -224,15 +247,18 @@ class CustomCursor {
         
         // 初始化前一个鼠标位置
         this.prevMousePos = { ...this.lastMousePos };
+        
+        console.log('粒子拖尾已启动');
     }
 
     hideDefaultCursor() {
         // 确保所有交互元素都隐藏默认光标
         const interactiveElements = document.querySelectorAll(`
-            a, button, input, textarea, select, 
+            a, button, input, textarea, select, option,
             .building-card, .clickable, .btn, .filter-btn, 
             .search-btn, .view-btn, .load-more-btn, .pagination-btn,
             .nav-link, .theme-dropdown-btn, .card-share-btn,
+            .format-select, .format-filter, .format-filter label,
             [onclick], [role="button"], [type="button"], 
             [type="submit"], [type="reset"], label, .switch, .slider
         `);
@@ -245,7 +271,7 @@ class CustomCursor {
     stopParticleTrail() {
         this.particlesEnabled = false; // 禁用粒子拖尾
         
-        // 保存状态到本地存储
+        // 保存状态到cookie
         this.saveSettings();
         
         // 清除粒子间隔
@@ -253,6 +279,8 @@ class CustomCursor {
             clearInterval(this.particleInterval);
             this.particleInterval = null;
         }
+        
+        console.log('粒子拖尾已停止');
     }
 
     createParticle(x, y) {
@@ -326,6 +354,7 @@ class CustomCursor {
             this.startParticleTrail();
         }
         
+        // 保存设置到cookie
         this.saveSettings();
         
         console.log('光标已启用 - 启用状态:', this.isEnabled, '粒子启用:', this.particlesEnabled);
@@ -352,6 +381,12 @@ class CustomCursor {
         // 移除自定义光标类
         document.body.classList.remove('custom-cursor-enabled');
         
+        // 移除全局样式
+        const globalStyles = document.getElementById('custom-cursor-hiding-styles');
+        if (globalStyles && globalStyles.parentNode) {
+            globalStyles.parentNode.removeChild(globalStyles);
+        }
+        
         // 清理所有粒子
         this.particles.forEach(particle => {
             if (particle.parentNode) {
@@ -360,7 +395,9 @@ class CustomCursor {
         });
         this.particles = [];
         
+        // 保存设置到cookie
         this.saveSettings();
+        console.log('光标已禁用 - 启用状态:', this.isEnabled, '粒子启用:', this.particlesEnabled);
     }
 
     toggle() {
@@ -377,9 +414,15 @@ class CustomCursor {
         
         // 如果当前启用，重新应用设置
         if (this.isEnabled) {
-            this.disable();
-            this.enable();
+            // 不需要完全禁用再启用，只需要更新粒子设置
+            if (this.particlesEnabled) {
+                // 重启粒子拖尾以应用新设置
+                this.stopParticleTrail();
+                this.startParticleTrail();
+            }
         }
+        
+        console.log('设置已更新:', this.settings);
     }
 
     getStatus() {
@@ -481,10 +524,11 @@ class CustomCursor {
                         // 检查子元素
                         // 检查新添加的元素是否需要隐藏默认光标
                         const childElements = node.querySelectorAll(`
-                            a, button, input, textarea, select, 
+                            a, button, input, textarea, select, option,
                             .building-card, .clickable, .btn, .filter-btn, 
                             .search-btn, .view-btn, .load-more-btn, .pagination-btn,
                             .nav-link, .theme-dropdown-btn, .card-share-btn,
+                            .format-select, .format-filter, .format-filter label,
                             [onclick], [role="button"], [type="button"], 
                             [type="submit"], [type="reset"], label, .switch, .slider
                         `);
@@ -506,17 +550,122 @@ class CustomCursor {
     // 检查元素是否应该隐藏默认光标
     shouldHideCursor(element) {
         const tagName = element.tagName.toLowerCase();
-        const interactiveTags = ['a', 'button', 'input', 'textarea', 'select', 'label'];
+        const interactiveTags = ['a', 'button', 'input', 'textarea', 'select', 'option', 'label'];
         
         return interactiveTags.includes(tagName) ||
                element.classList.contains('btn') ||
                element.classList.contains('clickable') ||
                element.classList.contains('building-card') ||
+               element.classList.contains('format-select') ||
+               element.classList.contains('format-filter') ||
                element.getAttribute('onclick') !== null ||
                element.getAttribute('role') === 'button' ||
                element.getAttribute('type') === 'button' ||
                element.getAttribute('type') === 'submit' ||
                element.getAttribute('type') === 'reset';
+    }
+
+    // 添加全局样式来强制隐藏下拉菜单的默认光标
+    addGlobalCursorHidingStyles() {
+        // 创建一个样式元素
+        const style = document.createElement('style');
+        style.id = 'custom-cursor-hiding-styles';
+        
+        // 添加强制隐藏下拉菜单光标的CSS规则
+        style.textContent = `
+            /* 强制隐藏所有下拉菜单的默认光标 */
+            select, option, .format-select, .format-select option {
+                cursor: none !important;
+            }
+            
+            /* 使用更高优先级的选择器 */
+            body select, body option, body .format-select, body .format-select option {
+                cursor: none !important;
+            }
+            
+            /* 自定义光标启用时的样式 */
+            .custom-cursor-enabled select,
+            .custom-cursor-enabled option,
+            .custom-cursor-enabled .format-select,
+            .custom-cursor-enabled .format-select option {
+                cursor: none !important;
+            }
+            
+            /* 覆盖任何可能的用户代理样式表 */
+            * select,
+            * option,
+            * .format-select,
+            * .format-select option {
+                cursor: none !important;
+            }
+        `;
+        
+        // 将样式元素添加到head中
+        document.head.appendChild(style);
+        
+        // 确保样式元素不会被其他脚本移除
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'childList') {
+                    // 检查样式元素是否被移除
+                    if (!document.getElementById('custom-cursor-hiding-styles')) {
+                        // 重新添加样式元素
+                        document.head.appendChild(style);
+                    }
+                }
+            });
+        });
+        
+        // 监听head元素的变化
+        observer.observe(document.head, { childList: true });
+    }
+
+    // 强制隐藏所有下拉菜单的默认光标
+    forceHideSelectCursors() {
+        const hideCursor = () => {
+            // 查找所有select和option元素
+            const selectElements = document.querySelectorAll('select, option, .format-select, .format-select option');
+            
+            selectElements.forEach(element => {
+                element.style.cursor = 'none';
+                // 设置内联样式，优先级最高
+                element.setAttribute('style', (element.getAttribute('style') || '') + '; cursor: none !important;');
+            });
+            
+            // 特别处理格式筛选下拉菜单
+            const formatSelect = document.getElementById('formatSelect');
+            if (formatSelect) {
+                formatSelect.style.cursor = 'none';
+                formatSelect.setAttribute('style', (formatSelect.getAttribute('style') || '') + '; cursor: none !important;');
+                
+                // 处理所有选项
+                const options = formatSelect.querySelectorAll('option');
+                options.forEach(option => {
+                    option.style.cursor = 'none';
+                    option.setAttribute('style', (option.getAttribute('style') || '') + '; cursor: none !important;');
+                });
+            }
+        };
+        
+        // 立即执行一次
+        hideCursor();
+        
+        // 定期检查并隐藏，防止动态创建的元素显示默认光标
+        setInterval(hideCursor, 1000);
+        
+        // 监听下拉菜单的显示/隐藏事件
+        document.addEventListener('focus', (e) => {
+            if (e.target.tagName === 'SELECT' || e.target.classList.contains('format-select')) {
+                hideCursor();
+            }
+        }, true);
+        
+        document.addEventListener('click', (e) => {
+            if (e.target.tagName === 'SELECT' || e.target.classList.contains('format-select') || 
+                e.target.tagName === 'OPTION') {
+                hideCursor();
+            }
+        }, true);
     }
 
     // Cookie操作方法

@@ -1,13 +1,12 @@
 // 音乐页面专用JavaScript
 let musicPageData = [];
-let tagsData = []; // 存储标签数据
 let musicCurrentFilter = 'all';
-let musicCurrentView = 'grid';
-let musicDisplayedItems = 12;
-const musicItemsPerPage = 12;
+let musicCurrentFormatFilter = 'all'; // 添加格式筛选变量
+let tagsData = []; // 存储标签数据
 
 // 分页相关变量
 let currentPage = 1;
+const musicItemsPerPage = 12;
 let filteredData = [];
 
 // 加载标签数据
@@ -40,7 +39,7 @@ function generateFilterButtons() {
     
     // 保留"全部"和"随机刷新"按钮
     const allButton = filterContainer.querySelector('[data-filter="all"]');
-    const refreshButton = filterContainer.querySelector('#randomRefresh');
+    const refreshButton = document.querySelector('#randomRefresh');
     
     // 清空现有按钮（除了保留的）
     filterContainer.innerHTML = '';
@@ -71,11 +70,154 @@ function generateFilterButtons() {
         button.addEventListener('click', handleFilter);
         filterContainer.appendChild(button);
     });
+}
+
+// 动态生成格式选项
+function generateFormatOptions() {
+    const formatSelect = document.getElementById('formatSelect');
+    if (!formatSelect) return;
     
-    // 添加"随机刷新"按钮
-    if (refreshButton) {
-        filterContainer.appendChild(refreshButton);
+    // 收集所有可用的文件格式
+    const formats = new Set();
+    musicPageData.forEach(item => {
+        if (item.fileFormat) {
+            formats.add(item.fileFormat);
+        }
+    });
+    
+    // 创建自定义下拉菜单
+    createCustomDropdown('formatSelect', Array.from(formats).sort());
+    
+    console.log('生成的格式选项:', Array.from(formats));
+}
+
+// 创建自定义下拉菜单
+function createCustomDropdown(selectId, formats) {
+    const formatFilter = document.querySelector('.format-filter');
+    if (!formatFilter) return;
+    
+    // 获取原始的select元素
+    const originalSelect = document.getElementById(selectId);
+    if (!originalSelect) return;
+    
+    // 创建自定义下拉菜单容器
+    const dropdown = document.createElement('div');
+    dropdown.className = 'custom-dropdown';
+    dropdown.id = selectId + '-custom';
+    
+    // 创建触发器
+    const trigger = document.createElement('div');
+    trigger.className = 'custom-dropdown-trigger';
+    trigger.innerHTML = `
+        <span class="dropdown-text">全部格式</span>
+        <span class="custom-dropdown-arrow"></span>
+    `;
+    
+    // 创建下拉菜单
+    const menu = document.createElement('div');
+    menu.className = 'custom-dropdown-menu';
+    
+    // 添加"全部格式"选项
+    const allItem = document.createElement('div');
+    allItem.className = 'custom-dropdown-item selected';
+    allItem.setAttribute('data-value', 'all');
+    allItem.textContent = '全部格式';
+    menu.appendChild(allItem);
+    
+    // 设置默认值为"全部格式"
+    originalSelect.value = 'all';
+    
+    // 添加格式选项
+    formats.forEach(format => {
+        const item = document.createElement('div');
+        item.className = 'custom-dropdown-item';
+        item.setAttribute('data-value', format);
+        item.textContent = format.toUpperCase();
+        menu.appendChild(item);
+    });
+    
+    // 组装下拉菜单
+    dropdown.appendChild(trigger);
+    dropdown.appendChild(menu);
+    
+    // 替换原有的select元素
+    if (originalSelect) {
+        originalSelect.parentNode.insertBefore(dropdown, originalSelect);
+        originalSelect.style.display = 'none';
     }
+    
+    // 添加点击事件
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('active');
+        
+        // 关闭其他下拉菜单
+        document.querySelectorAll('.custom-dropdown.active').forEach(other => {
+            if (other !== dropdown) {
+                other.classList.remove('active');
+            }
+        });
+    });
+    
+    // 添加选项点击事件
+    menu.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const item = e.target.closest('.custom-dropdown-item');
+        if (!item) return;
+        
+        // 更新选中状态
+        menu.querySelectorAll('.custom-dropdown-item').forEach(i => {
+            i.classList.remove('selected');
+        });
+        item.classList.add('selected');
+        
+        // 更新触发器文本
+        trigger.querySelector('.dropdown-text').textContent = item.textContent;
+        
+        // 更新隐藏的select元素
+        if (originalSelect) {
+            const selectedValue = item.getAttribute('data-value');
+            
+            // 确保select元素有对应的option
+            let option = Array.from(originalSelect.options).find(opt => opt.value === selectedValue);
+            if (!option) {
+                // 如果没有对应的option，创建一个
+                option = document.createElement('option');
+                option.value = selectedValue;
+                option.textContent = selectedValue.toUpperCase();
+                originalSelect.appendChild(option);
+            }
+            
+            // 设置select元素的值和selectedIndex
+            originalSelect.value = selectedValue;
+            originalSelect.selectedIndex = Array.from(originalSelect.options).findIndex(opt => opt.value === selectedValue);
+            
+            console.log('自定义下拉菜单选择值:', selectedValue);
+            console.log('更新后的select元素值:', originalSelect.value);
+            console.log('select元素selectedIndex:', originalSelect.selectedIndex);
+            
+            // 直接调用格式筛选处理函数
+            musicCurrentFormatFilter = selectedValue;
+            console.log('直接设置格式筛选器为:', selectedValue);
+            
+            // 触发change事件
+            const event = new Event('change', { bubbles: true });
+            originalSelect.dispatchEvent(event);
+            
+            // 立即渲染
+            renderMusic();
+        }
+        
+        // 关闭下拉菜单
+        dropdown.classList.remove('active');
+    });
+    
+    // 点击外部关闭下拉菜单
+    document.addEventListener('click', (e) => {
+        if (!dropdown.contains(e.target)) {
+            dropdown.classList.remove('active');
+        }
+    });
 }
 
 // 判断颜色是否为浅色
@@ -95,25 +237,56 @@ function isColorLight(color) {
 
 // 加载音乐数据
 async function loadMusicData() {
+    console.log('开始加载音乐数据...');
+    
     try {
-        // 尝试从GitHub仓库加载数据
+        // 添加时间戳防止缓存
         const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/content_data.json?t=' + Date.now();
-        const response = await fetch(githubUrl);
+        console.log('尝试从GitHub加载数据:', githubUrl);
+        
+        // 添加超时控制
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10秒超时
+        
+        const response = await fetch(githubUrl, {
+            signal: controller.signal,
+            mode: 'cors'
+        });
+        
+        clearTimeout(timeoutId);
+        
+        console.log('GitHub响应状态:', response.status, response.statusText);
         
         if (!response.ok) {
-            throw new Error('无法从GitHub加载数据文件');
+            throw new Error(`GitHub请求失败: ${response.status} ${response.statusText}`);
         }
         
         const data = await response.json();
+        console.log('GitHub原始数据:', data);
+        console.log('数据总数:', data.length);
+        
+        // 统计各类别数量
+        const categoryStats = {};
+        data.forEach(item => {
+            const cat = item.category || 'unknown';
+            categoryStats[cat] = (categoryStats[cat] || 0) + 1;
+        });
+        console.log('分类统计:', categoryStats);
         
         if (data && data.length > 0) {
             // 处理content_data.json中的数据结构，添加缺失的默认值
             // 只保留音乐类型的数据
             musicPageData = data
-                .filter(item => item.category === 'music' || item.type === 'music')
+                .filter(item => {
+                    console.log('过滤项目:', item, 'category:', item.category, 'type:', item.type);
+                    // 检查category值的确切类型
+                    const isMusic = item.category === 'music' || item.type === 'music';
+                    console.log('是否为音乐:', isMusic, 'category值:', typeof item.category, 'category值:', item.category);
+                    return isMusic;
+                })
                 .map(item => ({
                     ...item,
-                    type: item.type || item.category || 'music',
+                    type: item.type || item.category || 'music', // 使用category作为type的备用值
                     downloads: item.downloads || 0,
                     likes: item.likes || 0,
                     views: item.views || 0
@@ -121,17 +294,34 @@ async function loadMusicData() {
             
             console.log('从GitHub加载的音乐数据:', musicPageData);
             
-            // 如果没有音乐数据，加载示例数据
-            if (musicPageData.length === 0) {
-                await loadSampleData();
+            if (musicPageData.length > 0) {
+                // 动态生成格式选项
+                generateFormatOptions();
+                
+                // 确保数据加载完成后渲染
+                console.log('GitHub数据加载完成，开始渲染，数据量:', musicPageData.length);
+                renderMusic();
+                return;
+            } else {
+                console.log('GitHub数据中没有找到音乐类型的项目');
             }
         } else {
-            // 如果content_data.json为空，加载示例数据
-            await loadSampleData();
+            console.log('GitHub数据为空');
         }
     } catch (error) {
-        console.error('从GitHub加载数据失败:', error);
+        if (error.name === 'AbortError') {
+            console.error('GitHub请求超时:', error);
+        } else {
+            console.error('从GitHub加载数据失败:', error);
+        }
     }
+    
+    // 数据加载失败，保持空数组
+    musicPageData = [];
+    console.log('数据加载失败，不显示任何内容');
+    
+    // 仍然调用渲染函数以显示"没有找到相关音乐作品"消息
+    renderMusic();
 }
 
 // 加载示例数据
@@ -181,6 +371,12 @@ function setupEventListeners() {
         btn.addEventListener('click', handleFilter);
     });
     
+    // 格式筛选
+    const formatSelect = document.getElementById('formatSelect');
+    if (formatSelect) {
+        formatSelect.addEventListener('change', handleFormatFilter);
+    }
+    
     // 随机刷新按钮
     const refreshBtn = document.getElementById('randomRefresh');
     refreshBtn.addEventListener('click', handleRandomRefresh);
@@ -222,8 +418,23 @@ function setupEventListeners() {
 }
 
 // 渲染音乐内容
+// 更新作品计数
+function updateWorkCount() {
+    const workCountElement = document.getElementById('workCount');
+    if (workCountElement) {
+        const totalCount = musicPageData.length;
+        const filteredCount = filteredData.length;
+        workCountElement.textContent = `(文件总数: ${totalCount} | 当前筛选: ${filteredCount})`;
+    }
+}
+
 function renderMusic() {
-    const grid = document.getElementById('buildingsGrid');
+    const grid = document.getElementById('musicGrid');
+    if (!grid) {
+        console.error('找不到 musicGrid 元素');
+        return;
+    }
+    
     grid.innerHTML = '';
     
     // 应用过滤和搜索
@@ -245,14 +456,44 @@ function renderMusic() {
         });
     }
     
-    // 应用搜索
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    if (searchTerm) {
+    // 应用格式筛选
+    if (musicCurrentFormatFilter !== 'all') {
         filteredData = filteredData.filter(item => 
-            (item.title && item.title.toLowerCase().includes(searchTerm)) ||
-            (item.author && item.author.toLowerCase().includes(searchTerm)) ||
-            (item.description && item.description.toLowerCase().includes(searchTerm))
+            item.fileFormat && item.fileFormat.toLowerCase() === musicCurrentFormatFilter.toLowerCase()
         );
+    }
+    
+    // 应用搜索
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        const searchTerm = searchInput.value.toLowerCase().trim();
+        if (searchTerm) {
+            filteredData = filteredData.filter(item => {
+                // 检查标题
+                const titleMatch = item.title && item.title.toLowerCase().includes(searchTerm);
+                // 检查作者
+                const authorMatch = item.author && item.author.toLowerCase().includes(searchTerm);
+                // 检查描述
+                const descriptionMatch = item.description && item.description.toLowerCase().includes(searchTerm);
+                // 检查文件格式
+                const formatMatch = item.fileFormat && item.fileFormat.toLowerCase().includes(searchTerm);
+                
+                return titleMatch || authorMatch || descriptionMatch || formatMatch;
+            });
+            
+            // 如果搜索词匹配了某个文件格式，自动更新格式筛选器
+            const formatSelect = document.getElementById('formatSelect');
+            if (formatSelect) {
+                const matchedFormat = Array.from(formatSelect.options).find(option => 
+                    option.value !== 'all' && option.value.toLowerCase() === searchTerm
+                );
+                
+                if (matchedFormat) {
+                    formatSelect.value = matchedFormat.value;
+                    musicCurrentFormatFilter = matchedFormat.value;
+                }
+            }
+        }
     }
     
     // 重置当前页为第一页（当过滤条件改变时）
@@ -262,6 +503,9 @@ function renderMusic() {
     renderPaginatedItems();
     // 渲染分页控件
     renderPagination();
+    
+    // 更新作品计数
+    updateWorkCount();
 }
 
 function renderPaginatedItems() {
@@ -394,7 +638,15 @@ function createMusicCard(music) {
     const workTags = getWorkTags(music.tags);
     
     // 处理图片路径，确保使用正确的相对路径
-    let imagePath = music.image;
+    let imagePath = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/img/none.png'; // 默认图片
+    if (music.image && music.image.trim() !== '') {
+        // 如果是相对路径，添加CDN前缀
+        if (!music.image.startsWith('http')) {
+            imagePath = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/' + music.image;
+        } else {
+            imagePath = music.image;
+        }
+    }
     if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('../')) {
         imagePath = '../' + imagePath;
     }
@@ -415,7 +667,7 @@ function createMusicCard(music) {
     }
     
     cardInner.innerHTML = `
-        <img src="${imagePath}" alt="${music.title}" class="building-image" onerror="this.src='https://via.placeholder.com/300x200/ff69b4/ffffff?text=暂无图片'">
+        <img src="${imagePath}" alt="${music.title}" class="building-image" onerror="this.src='https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/img/none.png'">
         <div class="building-info">
             <h3 class="building-title">${music.title}</h3>
             <p class="building-author">作者: ${music.author || '未知'}</p>
@@ -472,6 +724,15 @@ function getTypeName(type) {
 
 // 搜索处理
 function handleSearch() {
+    renderMusic();
+}
+
+// 格式筛选处理
+function handleFormatFilter(event) {
+    musicCurrentFormatFilter = event.target.value;
+    console.log('格式筛选触发，选择的格式:', musicCurrentFormatFilter);
+    console.log('事件目标:', event.target);
+    console.log('事件目标值:', event.target.value);
     renderMusic();
 }
 

@@ -645,8 +645,12 @@ function setupCursorSettings() {
             let cursorEnabled = true; // 默认启用
             
             if (savedSettings) {
-                const settings = JSON.parse(savedSettings);
-                cursorEnabled = settings.enabled === true;
+                try {
+                    const settings = JSON.parse(savedSettings);
+                    cursorEnabled = settings.enabled === true;
+                } catch (error) {
+                    console.error('解析光标设置失败:', error);
+                }
             }
             
             customCursorToggle.checked = cursorEnabled;
@@ -670,8 +674,12 @@ function setupCursorSettings() {
             let particlesEnabled = true; // 默认启用
             
             if (savedSettings) {
-                const settings = JSON.parse(savedSettings);
-                particlesEnabled = settings.particlesEnabled === true;
+                try {
+                    const settings = JSON.parse(savedSettings);
+                    particlesEnabled = settings.particlesEnabled === true;
+                } catch (error) {
+                    console.error('解析粒子设置失败:', error);
+                }
             }
             
             particleTrailToggle.checked = particlesEnabled;
@@ -707,7 +715,23 @@ function setupParticleControls() {
     const particleDensity = document.getElementById('particleDensity');
     const particleLifetime = document.getElementById('particleLifetime');
 
+    // 从cookie加载设置并初始化滑块
+    const savedSettings = getCookie('customCursorSettings');
+    let settings = {};
+    
+    if (savedSettings) {
+        try {
+            settings = JSON.parse(savedSettings);
+        } catch (error) {
+            console.error('解析粒子设置失败:', error);
+        }
+    }
+
+    // 初始化粒子大小滑块
     if (particleSize) {
+        particleSize.value = settings.particleSize || 6;
+        particleSize.nextElementSibling.textContent = (settings.particleSize || 6) + 'px';
+        
         particleSize.addEventListener('input', (e) => {
             const value = e.target.value;
             e.target.nextElementSibling.textContent = value + 'px';
@@ -715,7 +739,11 @@ function setupParticleControls() {
         });
     }
 
+    // 初始化粒子密度滑块
     if (particleDensity) {
+        particleDensity.value = settings.particleInterval || 20;
+        particleDensity.nextElementSibling.textContent = (settings.particleInterval || 20) + 'ms';
+        
         particleDensity.addEventListener('input', (e) => {
             const value = e.target.value;
             e.target.nextElementSibling.textContent = value + 'ms';
@@ -723,7 +751,11 @@ function setupParticleControls() {
         });
     }
 
+    // 初始化粒子生命周期滑块
     if (particleLifetime) {
+        particleLifetime.value = settings.particleLifetime || 1000;
+        particleLifetime.nextElementSibling.textContent = (settings.particleLifetime || 1000) + 'ms';
+        
         particleLifetime.addEventListener('input', (e) => {
             const value = e.target.value;
             e.target.nextElementSibling.textContent = value + 'ms';
@@ -747,23 +779,55 @@ function updateCursorSettings() {
     };
 
     window.customCursor.updateSettings(newSettings);
+    
+    // 同时保存到cookie
+    const savedSettings = getCookie('customCursorSettings');
+    let currentSettings = {};
+    
+    if (savedSettings) {
+        try {
+            currentSettings = JSON.parse(savedSettings);
+        } catch (error) {
+            console.error('解析当前设置失败:', error);
+        }
+    }
+    
+    // 合并设置并保存
+    const mergedSettings = { ...currentSettings, ...newSettings };
+    setCookie('customCursorSettings', JSON.stringify(mergedSettings), 365);
+    
+    console.log('设置已更新并保存:', mergedSettings);
 }
 
 // 更新粒子设置的可见性
 function updateParticleSettingsVisibility() {
     if (!window.customCursor) return;
 
-    const cursorStatus = window.customCursor.getStatus();
+    // 从cookie获取最新状态
+    const savedSettings = getCookie('customCursorSettings');
+    let cursorEnabled = true;
+    
+    if (savedSettings) {
+        try {
+            const settings = JSON.parse(savedSettings);
+            cursorEnabled = settings.enabled === true;
+        } catch (error) {
+            console.error('解析设置失败:', error);
+        }
+    }
+
     const particleSettings = document.getElementById('particleSettings');
     const particleControls = document.getElementById('particleControls');
 
     if (particleSettings) {
-        particleSettings.style.display = cursorStatus.enabled ? 'flex' : 'none';
+        particleSettings.style.display = cursorEnabled ? 'flex' : 'none';
     }
 
     if (particleControls) {
-        particleControls.style.display = cursorStatus.enabled ? 'grid' : 'none';
+        particleControls.style.display = cursorEnabled ? 'grid' : 'none';
     }
+    
+    console.log('粒子设置可见性已更新，光标启用:', cursorEnabled);
 }
 
 // Cookie操作方法

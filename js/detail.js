@@ -225,15 +225,20 @@ function displayWorkDetail() {
     
     // 更新图片
     const mainImage = document.getElementById('mainImage');
-    // 处理图片路径，确保正确显示
-    let coverImagePath = currentWork.coverImage;
-    if (coverImagePath && !coverImagePath.startsWith('http') && !coverImagePath.startsWith('../')) {
-        coverImagePath = '../' + coverImagePath;
+    // 处理图片路径，使用CDN地址
+    let coverImagePath = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/img/none.png'; // 默认图片
+    if (currentWork.coverImage && currentWork.coverImage.trim() !== '') {
+        // 如果是相对路径，添加CDN前缀
+        if (!currentWork.coverImage.startsWith('http')) {
+            coverImagePath = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/' + currentWork.coverImage;
+        } else {
+            coverImagePath = currentWork.coverImage;
+        }
     }
     mainImage.src = coverImagePath;
     mainImage.alt = currentWork.title;
     mainImage.onerror = function() {
-        this.src = 'https://via.placeholder.com/400x300/ff69b4/ffffff?text=暂无图片';
+        this.src = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/img/none.png';
     };
     
     // 添加主图点击事件
@@ -258,7 +263,7 @@ function generateThumbnails() {
         currentWork.coverImage,
         currentWork.image,
         // 可以添加更多图片URL
-    ].filter(img => img); // 过滤掉空值
+    ].filter(img => img && img.trim() !== ''); // 过滤掉空值
     
     // 如果没有足够的图片，使用同一图片创建多个缩略图
     if (thumbnails.length === 1) {
@@ -269,10 +274,15 @@ function generateThumbnails() {
     
     thumbnails.forEach((src, index) => {
         const thumbnail = document.createElement('img');
-        // 处理图片路径
-        let thumbnailSrc = src;
-        if (thumbnailSrc && !thumbnailSrc.startsWith('http') && !thumbnailSrc.startsWith('../')) {
-            thumbnailSrc = '../' + thumbnailSrc;
+        // 处理图片路径，使用CDN地址
+    let thumbnailSrc = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/img/none.png'; // 默认图片
+        if (src && src.trim() !== '') {
+            // 如果是相对路径，添加CDN前缀
+            if (!src.startsWith('http')) {
+                thumbnailSrc = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/' + src;
+            } else {
+                thumbnailSrc = src;
+            }
         }
         
         thumbnail.src = thumbnailSrc;
@@ -300,7 +310,7 @@ function generateThumbnails() {
         
         // 添加错误处理
         thumbnail.onerror = function() {
-            this.src = 'https://via.placeholder.com/80x80/ff69b4/ffffff?text=暂无图片';
+            this.src = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/img/none.png';
         };
         
         thumbnailGrid.appendChild(thumbnail);
@@ -369,9 +379,14 @@ function createRelatedCard(work) {
     const workTags = getWorkTags(work.tags);
     
     // 处理图片路径
-    let workImagePath = work.image;
-    if (workImagePath && !workImagePath.startsWith('http') && !workImagePath.startsWith('../')) {
-        workImagePath = '../' + workImagePath;
+    let workImagePath = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/img/none.png'; // 默认图片
+    if (work.image && work.image.trim() !== '') {
+        // 如果是相对路径，添加CDN前缀
+        if (!work.image.startsWith('http')) {
+            workImagePath = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/' + work.image;
+        } else {
+            workImagePath = work.image;
+        }
     }
     
     // 构建标签HTML
@@ -396,7 +411,7 @@ function createRelatedCard(work) {
     }
     
     card.innerHTML = `
-        <img src="${workImagePath}" alt="${work.title}" class="building-image" onerror="this.src='https://via.placeholder.com/300x200/ff69b4/ffffff?text=暂无图片'">
+        <img src="${workImagePath}" alt="${work.title}" class="building-image" onerror="this.src='https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/img/none.png'">
         <div class="building-info">
             <h3 class="building-title">${work.title}</h3>
             <p class="building-author">作者: ${work.author}</p>

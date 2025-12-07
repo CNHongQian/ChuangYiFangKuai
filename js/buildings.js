@@ -1,6 +1,7 @@
 // 建筑页面专用JavaScript
 let buildingsPageData = [];
 let buildingsCurrentFilter = 'all'; // 重命名以避免冲突
+let buildingsCurrentFormatFilter = 'all'; // 添加格式筛选变量
 let buildingsCurrentView = 'grid'; // 重命名以避免冲突
 let tagsData = []; // 存储标签数据
 
@@ -70,6 +71,9 @@ async function loadBuildingsData() {
             console.log('从GitHub加载的建筑数据:', buildingsPageData);
             
             if (buildingsPageData.length > 0) {
+                // 动态生成格式选项
+                generateFormatOptions();
+                
                 // 确保数据加载完成后渲染
                 console.log('GitHub数据加载完成，开始渲染，数据量:', buildingsPageData.length);
                 renderBuildings();
@@ -126,7 +130,7 @@ function generateFilterButtons() {
     
     // 保留"全部"和"随机刷新"按钮
     const allButton = filterContainer.querySelector('[data-filter="all"]');
-    const refreshButton = filterContainer.querySelector('#randomRefresh');
+    const refreshButton = document.querySelector('#randomRefresh');
     
     // 清空现有按钮（除了保留的）
     filterContainer.innerHTML = '';
@@ -157,11 +161,154 @@ function generateFilterButtons() {
         button.addEventListener('click', handleFilter);
         filterContainer.appendChild(button);
     });
+}
+
+// 动态生成格式选项
+function generateFormatOptions() {
+    const formatSelect = document.getElementById('formatSelect');
+    if (!formatSelect) return;
     
-    // 添加"随机刷新"按钮
-    if (refreshButton) {
-        filterContainer.appendChild(refreshButton);
+    // 收集所有可用的文件格式
+    const formats = new Set();
+    buildingsPageData.forEach(item => {
+        if (item.fileFormat) {
+            formats.add(item.fileFormat);
+        }
+    });
+    
+    // 创建自定义下拉菜单
+    createCustomDropdown('formatSelect', Array.from(formats).sort());
+    
+    console.log('生成的格式选项:', Array.from(formats));
+}
+
+// 创建自定义下拉菜单
+function createCustomDropdown(selectId, formats) {
+    const formatFilter = document.querySelector('.format-filter');
+    if (!formatFilter) return;
+    
+    // 获取原始的select元素
+    const originalSelect = document.getElementById(selectId);
+    if (!originalSelect) return;
+    
+    // 创建自定义下拉菜单容器
+    const dropdown = document.createElement('div');
+    dropdown.className = 'custom-dropdown';
+    dropdown.id = selectId + '-custom';
+    
+    // 创建触发器
+    const trigger = document.createElement('div');
+    trigger.className = 'custom-dropdown-trigger';
+    trigger.innerHTML = `
+        <span class="dropdown-text">全部格式</span>
+        <span class="custom-dropdown-arrow"></span>
+    `;
+    
+    // 创建下拉菜单
+    const menu = document.createElement('div');
+    menu.className = 'custom-dropdown-menu';
+    
+    // 添加"全部格式"选项
+    const allItem = document.createElement('div');
+    allItem.className = 'custom-dropdown-item selected';
+    allItem.setAttribute('data-value', 'all');
+    allItem.textContent = '全部格式';
+    menu.appendChild(allItem);
+    
+    // 设置默认值为"全部格式"
+    originalSelect.value = 'all';
+    
+    // 添加格式选项
+    formats.forEach(format => {
+        const item = document.createElement('div');
+        item.className = 'custom-dropdown-item';
+        item.setAttribute('data-value', format);
+        item.textContent = format.toUpperCase();
+        menu.appendChild(item);
+    });
+    
+    // 组装下拉菜单
+    dropdown.appendChild(trigger);
+    dropdown.appendChild(menu);
+    
+    // 替换原有的select元素
+    if (originalSelect) {
+        originalSelect.parentNode.insertBefore(dropdown, originalSelect);
+        originalSelect.style.display = 'none';
     }
+    
+    // 添加点击事件
+    trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('active');
+        
+        // 关闭其他下拉菜单
+        document.querySelectorAll('.custom-dropdown.active').forEach(other => {
+            if (other !== dropdown) {
+                other.classList.remove('active');
+            }
+        });
+    });
+    
+    // 添加选项点击事件
+    menu.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const item = e.target.closest('.custom-dropdown-item');
+        if (!item) return;
+        
+        // 更新选中状态
+        menu.querySelectorAll('.custom-dropdown-item').forEach(i => {
+            i.classList.remove('selected');
+        });
+        item.classList.add('selected');
+        
+        // 更新触发器文本
+        trigger.querySelector('.dropdown-text').textContent = item.textContent;
+        
+        // 更新隐藏的select元素
+        if (originalSelect) {
+            const selectedValue = item.getAttribute('data-value');
+            
+            // 确保select元素有对应的option
+            let option = Array.from(originalSelect.options).find(opt => opt.value === selectedValue);
+            if (!option) {
+                // 如果没有对应的option，创建一个
+                option = document.createElement('option');
+                option.value = selectedValue;
+                option.textContent = selectedValue.toUpperCase();
+                originalSelect.appendChild(option);
+            }
+            
+            // 设置select元素的值和selectedIndex
+            originalSelect.value = selectedValue;
+            originalSelect.selectedIndex = Array.from(originalSelect.options).findIndex(opt => opt.value === selectedValue);
+            
+            console.log('自定义下拉菜单选择值:', selectedValue);
+            console.log('更新后的select元素值:', originalSelect.value);
+            console.log('select元素selectedIndex:', originalSelect.selectedIndex);
+            
+            // 直接调用格式筛选处理函数
+            buildingsCurrentFormatFilter = selectedValue;
+            console.log('直接设置格式筛选器为:', selectedValue);
+            
+            // 触发change事件
+            const event = new Event('change', { bubbles: true });
+            originalSelect.dispatchEvent(event);
+            
+            // 立即渲染
+            renderBuildings();
+        }
+        
+        // 关闭下拉菜单
+        dropdown.classList.remove('active');
+    });
+    
+    // 点击外部关闭下拉菜单
+    document.addEventListener('click', (e) => {
+        if (!dropdown.contains(e.target)) {
+            dropdown.classList.remove('active');
+        }
+    });
 }
 
 // 判断颜色是否为浅色
@@ -233,6 +380,12 @@ function setupEventListeners() {
         btn.addEventListener('click', handleFilter);
     });
     
+    // 格式筛选
+    const formatSelect = document.getElementById('formatSelect');
+    if (formatSelect) {
+        formatSelect.addEventListener('change', handleFormatFilter);
+    }
+    
     // 随机刷新按钮
     const refreshBtn = document.getElementById('randomRefresh');
     refreshBtn.addEventListener('click', handleRandomRefresh);
@@ -273,6 +426,16 @@ function setupEventListeners() {
     });
 }
 
+// 更新作品计数
+function updateWorkCount() {
+    const workCountElement = document.getElementById('workCount');
+    if (workCountElement) {
+        const totalCount = buildingsPageData.length;
+        const filteredCount = filteredData.length;
+        workCountElement.textContent = `(文件总数: ${totalCount} | 当前筛选: ${filteredCount})`;
+    }
+}
+
 // 渲染建筑内容
 function renderBuildings() {
     const grid = document.getElementById('buildingsGrid');
@@ -304,16 +467,52 @@ function renderBuildings() {
         });
     }
     
+    // 应用格式筛选
+    if (buildingsCurrentFormatFilter !== 'all') {
+        console.log('筛选前数据量:', filteredData.length);
+        console.log('选择的格式:', buildingsCurrentFormatFilter);
+        
+        // 显示所有可用的格式
+        const availableFormats = [...new Set(filteredData.map(item => item.fileFormat).filter(Boolean))];
+        console.log('可用格式:', availableFormats);
+        
+        filteredData = filteredData.filter(item => 
+            item.fileFormat && item.fileFormat.toLowerCase() === buildingsCurrentFormatFilter.toLowerCase()
+        );
+        
+        console.log('筛选后数据量:', filteredData.length);
+    }
+    
     // 应用搜索
     const searchInput = document.getElementById('searchInput');
     if (searchInput) {
-        const searchTerm = searchInput.value.toLowerCase();
+        const searchTerm = searchInput.value.toLowerCase().trim();
         if (searchTerm) {
-            filteredData = filteredData.filter(item => 
-                (item.title && item.title.toLowerCase().includes(searchTerm)) ||
-                (item.author && item.author.toLowerCase().includes(searchTerm)) ||
-                (item.description && item.description.toLowerCase().includes(searchTerm))
-            );
+            filteredData = filteredData.filter(item => {
+                // 检查标题
+                const titleMatch = item.title && item.title.toLowerCase().includes(searchTerm);
+                // 检查作者
+                const authorMatch = item.author && item.author.toLowerCase().includes(searchTerm);
+                // 检查描述
+                const descriptionMatch = item.description && item.description.toLowerCase().includes(searchTerm);
+                // 检查文件格式
+                const formatMatch = item.fileFormat && item.fileFormat.toLowerCase().includes(searchTerm);
+                
+                return titleMatch || authorMatch || descriptionMatch || formatMatch;
+            });
+            
+            // 如果搜索词匹配了某个文件格式，自动更新格式筛选器
+            const formatSelect = document.getElementById('formatSelect');
+            if (formatSelect) {
+                const matchedFormat = Array.from(formatSelect.options).find(option => 
+                    option.value !== 'all' && option.value.toLowerCase() === searchTerm
+                );
+                
+                if (matchedFormat) {
+                    formatSelect.value = matchedFormat.value;
+                    buildingsCurrentFormatFilter = matchedFormat.value;
+                }
+            }
         }
     }
     
@@ -324,6 +523,9 @@ function renderBuildings() {
     renderPaginatedItems();
     // 渲染分页控件
     renderPagination();
+    
+    // 更新作品计数
+    updateWorkCount();
 }
 
 function renderPaginatedItems() {
@@ -439,14 +641,19 @@ function createBuildingCard(building) {
     
     const categoryTag = getCategoryName(building.category);
     
-    // 处理图片路径，确保使用正确的相对路径
-    let imagePath = building.image;
-    if (imagePath && !imagePath.startsWith('http') && !imagePath.startsWith('../')) {
-        imagePath = '../' + imagePath;
+    // 处理图片路径，使用CDN地址
+    let imagePath = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/img/none.png'; // 默认图片
+    if (building.image && building.image.trim() !== '') {
+        // 如果是相对路径，添加CDN前缀
+        if (!building.image.startsWith('http')) {
+            imagePath = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/' + building.image;
+        } else {
+            imagePath = building.image;
+        }
     }
     
     cardInner.innerHTML = `
-        <img src="${imagePath}" alt="${building.title}" class="building-image" onerror="this.src='https://via.placeholder.com/300x200/ff69b4/ffffff?text=暂无图片'">
+        <img src="${imagePath}" alt="${building.title}" class="building-image" onerror="this.src='https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/img/none.png'">
         <div class="building-info">
             <h3 class="building-title">${building.title}</h3>
             <p class="building-author">作者: ${building.author || '未知'}</p>
@@ -492,6 +699,15 @@ function getCategoryName(category) {
 
 // 搜索处理
 function handleSearch() {
+    renderBuildings();
+}
+
+// 格式筛选处理
+function handleFormatFilter(event) {
+    buildingsCurrentFormatFilter = event.target.value;
+    console.log('格式筛选触发，选择的格式:', buildingsCurrentFormatFilter);
+    console.log('事件目标:', event.target);
+    console.log('事件目标值:', event.target.value);
     renderBuildings();
 }
 

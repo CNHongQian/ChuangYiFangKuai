@@ -53,12 +53,20 @@
                         <input type="text" id="searchInput" placeholder="搜索建筑作品或作者...">
                         <button class="search-btn">搜索</button>
                     </div>
-                    <div class="filter-buttons">
-                        <button class="filter-btn active" data-filter="all">全部</button>
-                        <button class="filter-btn" data-filter="building">建筑</button>
-                        <button class="filter-btn" data-filter="tool">工具</button>
-                        <button class="filter-btn" data-filter="music">音乐</button>
-                        <button class="filter-btn" data-filter="command">指令</button>
+                    <div class="filter-options">
+                        <div class="filter-buttons">
+                            <button class="filter-btn active" data-filter="all">全部</button>
+                            <button class="filter-btn" data-filter="building">建筑</button>
+                            <button class="filter-btn" data-filter="tool">工具</button>
+                            <button class="filter-btn" data-filter="music">音乐</button>
+                            <button class="filter-btn" data-filter="command">指令</button>
+                        </div>
+                        <div class="format-filter">
+                            <label for="formatSelect">格式:</label>
+                            <select id="formatSelect" class="format-select">
+                                <option value="all">全部格式</option>
+                            </select>
+                        </div>
                         <button class="refresh-btn" id="randomRefresh">
                             <i class="fas fa-random"></i> 随机刷新
                         </button>
@@ -70,7 +78,10 @@
         <section class="buildings-section">
             <div class="container">
                 <div class="section-header">
-                    <h3 class="section-title">建筑作品</h3>
+                    <h3 class="section-title">
+                    建筑作品
+                    <span class="work-count" id="workCount">(文件总数: 0 | 当前筛选: 0)</span>
+                </h3>
                     <div class="view-options">
                         <button class="view-btn active" data-view="grid">
                             <i class="fas fa-th"></i>
