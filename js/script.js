@@ -494,3 +494,212 @@ function addScrollAnimation() {
 
 // 页面加载完成后添加滚动动画
 window.addEventListener('load', addScrollAnimation);
+
+// 全局主题加载功能
+const themePresets = [
+    {
+        id: 'pink',
+        name: '粉白渐变',
+        description: '温馨浪漫的粉白渐变主题',
+        primary: '#ff69b4',
+        secondary: '#ff1493',
+        text: '#d63384',
+        background: '#ffffff'
+    },
+    {
+        id: 'blue',
+        name: '蓝白清新',
+        description: '清新自然的蓝白渐变主题',
+        primary: '#4285f4',
+        secondary: '#1a73e8',
+        text: '#1a73e8',
+        background: '#ffffff'
+    },
+    {
+        id: 'green',
+        name: '绿色自然',
+        description: '自然清新的绿色渐变主题',
+        primary: '#34a853',
+        secondary: '#0f9d58',
+        text: '#0f9d58',
+        background: '#ffffff'
+    },
+    {
+        id: 'purple',
+        name: '紫色梦幻',
+        description: '神秘梦幻的紫色渐变主题',
+        primary: '#9c27b0',
+        secondary: '#7b1fa2',
+        text: '#7b1fa2',
+        background: '#ffffff'
+    },
+    {
+        id: 'orange',
+        name: '橙色活力',
+        description: '充满活力的橙色渐变主题',
+        primary: '#ff9800',
+        secondary: '#f57c00',
+        text: '#f57c00',
+        background: '#ffffff'
+    },
+    {
+        id: 'dark',
+        name: '深色模式',
+        description: '护眼的深色主题',
+        primary: '#bb86fc',
+        secondary: '#6200ee',
+        text: '#bb86fc',
+        background: '#121212'
+    }
+];
+
+// 加载保存的主题
+function loadGlobalTheme() {
+    const savedTheme = localStorage.getItem('chuangyi-theme');
+    if (savedTheme) {
+        try {
+            const currentTheme = JSON.parse(savedTheme);
+            // 如果是自定义主题，则使用默认主题
+            if (currentTheme.id === 'custom') {
+                applyGlobalTheme(themePresets[0]);
+            } else {
+                applyGlobalTheme(currentTheme);
+            }
+        } catch (error) {
+            console.error('加载保存的主题失败:', error);
+            applyGlobalTheme(themePresets[0]);
+        }
+    } else {
+        applyGlobalTheme(themePresets[0]);
+    }
+}
+
+// 获取主题变量
+function getThemeVariables(themeId) {
+    const themes = {
+        light: {
+            '--primary-color': '#ff69b4',
+            '--secondary-color': '#ff1493',
+            '--accent-color': '#c71585',
+            '--primary-light': '#ffeef8',
+            '--primary-medium': '#fff5f7',
+            '--primary-dark': '#ffd1dc',
+            '--text-primary': '#333',
+            '--text-secondary': '#666',
+            '--text-muted': '#888',
+            '--background-start': '#ffeef8',
+            '--background-25': '#fff5f7',
+            '--background-50': '#fff0f5',
+            '--background-75': '#ffe4e1',
+            '--background-end': '#ffd1dc',
+            '--card-bg': 'rgba(255, 255, 255, 0.95)',
+            '--card-border': 'rgba(255, 192, 203, 0.3)',
+            '--card-shadow': 'rgba(255, 192, 203, 0.2)',
+            '--card-hover-shadow': 'rgba(255, 192, 203, 0.3)',
+            '--transition-speed': '0.3s',
+            '--animation-duration': '15s'
+        },
+        dark: {
+            '--primary-color': '#bb86fc',
+            '--secondary-color': '#3700b3',
+            '--accent-color': '#6200ee',
+            '--primary-light': '#1a1a2e',
+            '--primary-medium': '#16213e',
+            '--primary-dark': '#0f3460',
+            '--text-primary': '#e0e0e0',
+            '--text-secondary': '#b0b0b0',
+            '--text-muted': '#808080',
+            '--background-start': '#1a1a2e',
+            '--background-25': '#16213e',
+            '--background-50': '#0f3460',
+            '--background-75': '#533483',
+            '--background-end': '#e94560',
+            '--card-bg': 'rgba(30, 30, 46, 0.95)',
+            '--card-border': 'rgba(187, 134, 252, 0.3)',
+            '--card-shadow': 'rgba(187, 134, 252, 0.2)',
+            '--card-hover-shadow': 'rgba(187, 134, 252, 0.4)',
+            '--transition-speed': '0.3s',
+            '--animation-duration': '20s'
+        },
+        blue: {
+            '--primary-color': '#4facfe',
+            '--secondary-color': '#00f2fe',
+            '--accent-color': '#0099ff',
+            '--primary-light': '#e6f7ff',
+            '--primary-medium': '#bae7ff',
+            '--primary-dark': '#91d5ff',
+            '--text-primary': '#262626',
+            '--text-secondary': '#595959',
+            '--text-muted': '#8c8c8c',
+            '--background-start': '#e6f7ff',
+            '--background-25': '#bae7ff',
+            '--background-50': '#91d5ff',
+            '--background-75': '#69c0ff',
+            '--background-end': '#40a9ff',
+            '--card-bg': 'rgba(255, 255, 255, 0.95)',
+            '--card-border': 'rgba(79, 172, 254, 0.3)',
+            '--card-shadow': 'rgba(79, 172, 254, 0.2)',
+            '--card-hover-shadow': 'rgba(79, 172, 254, 0.3)',
+            '--transition-speed': '0.3s',
+            '--animation-duration': '18s'
+        },
+        green: {
+            '--primary-color': '#52c41a',
+            '--secondary-color': '#389e0d',
+            '--accent-color': '#237804',
+            '--primary-light': '#f6ffed',
+            '--primary-medium': '#d9f7be',
+            '--primary-dark': '#b7eb8f',
+            '--text-primary': '#262626',
+            '--text-secondary': '#595959',
+            '--text-muted': '#8c8c8c',
+            '--background-start': '#f6ffed',
+            '--background-25': '#d9f7be',
+            '--background-50': '#b7eb8f',
+            '--background-75': '#95de64',
+            '--background-end': '#73d13d',
+            '--card-bg': 'rgba(255, 255, 255, 0.95)',
+            '--card-border': 'rgba(82, 196, 26, 0.3)',
+            '--card-shadow': 'rgba(82, 196, 26, 0.2)',
+            '--card-hover-shadow': 'rgba(82, 196, 26, 0.3)',
+            '--transition-speed': '0.3s',
+            '--animation-duration': '16s'
+        }
+    };
+    
+    return themes[themeId] || themes.light;
+}
+
+// 应用全局主题
+function applyGlobalTheme(theme) {
+    console.log('应用全局主题:', theme);
+    
+    // 根据主题ID设置完整的主题变量
+    const themeVariables = getThemeVariables(theme.id);
+    
+    // 设置CSS变量
+    const root = document.documentElement;
+    Object.keys(themeVariables).forEach(key => {
+        root.style.setProperty(key, themeVariables[key]);
+    });
+    
+    // 创建动态样式
+    let dynamicStyle = document.getElementById('global-theme-style');
+    if (!dynamicStyle) {
+        dynamicStyle = document.createElement('style');
+        dynamicStyle.id = 'global-theme-style';
+        document.head.appendChild(dynamicStyle);
+    }
+    
+    // 设置空的CSS，让CSS变量生效
+    dynamicStyle.textContent = '';
+    
+    console.log('全局主题应用完成');
+}
+
+// 页面加载时应用主题
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        loadGlobalTheme();
+    }, 100);
+});
