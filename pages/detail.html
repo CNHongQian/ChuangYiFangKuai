@@ -122,6 +122,37 @@
             transform: scale(1.1);
         }
         
+        .quality-toggle-btn {
+            position: absolute;
+            bottom: 15px;
+            right: 15px;
+            background: var(--primary-color);
+            border: none;
+            padding: 8px 12px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px var(--card-shadow);
+            color: white;
+            font-size: 0.9rem;
+        }
+        
+        .quality-toggle-btn:hover {
+            background: var(--secondary-color);
+            transform: scale(1.05);
+        }
+        
+        .quality-toggle-btn.high-quality {
+            background: #28a745;
+        }
+        
+        .quality-toggle-btn.high-quality:hover {
+            background: #218838;
+        }
+        
         .thumbnail-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -470,6 +501,15 @@
     </button>
     
     <header class="header">
+        <div class="memorial-nav" id="memorialNav" style="display: none;">
+            <div class="container">
+                <div class="memorial-nav-content">
+                    <i class="fas fa-flag memorial-flag"></i>
+                    <span class="memorial-title" id="memorialTitle"></span>
+                    <i class="fas fa-flag memorial-flag"></i>
+                </div>
+            </div>
+        </div>
         <div class="container">
             <div class="logo">
                 <i class="fas fa-cube"></i>
@@ -507,6 +547,10 @@
                         <img id="mainImage" src="" alt="" class="main-image">
                         <button class="zoom-btn" id="zoomBtn" onclick="openImageModal()">
                             <i class="fas fa-search-plus"></i>
+                        </button>
+                        <button class="quality-toggle-btn" id="qualityToggleBtn" onclick="toggleImageQuality()">
+                            <i class="fas fa-compress"></i>
+                            <span>查看原图</span>
                         </button>
                     </div>
                     <div class="thumbnail-grid" id="thumbnailGrid">
@@ -625,7 +669,7 @@
     <script src="../js/cursor.js"></script>
     <script src="../js/contextmenu.js"></script>
     <script src="../js/theme.js"></script>
+    <script src="../js/memorial.js"></script>
     <script src="../js/script.js"></script>
-    <script src="../js/detail.js"></script>
-</body>
+    <script src="../js/detail.js"></script></body>
 </html>

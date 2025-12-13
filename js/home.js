@@ -226,7 +226,6 @@ function shareWorkFromCard(item) {
         }).then(() => {
             showNotification('分享成功！', 'success');
         }).catch(err => {
-            console.log('分享取消或失败', err);
             // 如果用户取消或分享失败，则回退到复制链接
             copyShareLink(detailUrl, shareText);
         });

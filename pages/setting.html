@@ -356,21 +356,23 @@
         .range-input::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
-            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            background: var(--primary-color);
             cursor: pointer;
         }
         
         .range-input::-moz-range-thumb {
-            width: 18px;
-            height: 18px;
+            width: 20px;
+            height: 20px;
             border-radius: 50%;
-            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            background: var(--primary-color);
             cursor: pointer;
             border: none;
         }
+        
+        
         
         .range-value {
             flex: 0 0 60px;
@@ -402,6 +404,15 @@
     <div class="background-animation"><div class="background-decoration-1"></div><div class="background-decoration-2"></div><div class="background-decoration-3"></div></div>
     
     <header class="header">
+        <div class="memorial-nav" id="memorialNav" style="display: none;">
+            <div class="container">
+                <div class="memorial-nav-content">
+                    <i class="fas fa-flag memorial-flag"></i>
+                    <span class="memorial-title" id="memorialTitle"></span>
+                    <i class="fas fa-flag memorial-flag"></i>
+                </div>
+            </div>
+        </div>
         <div class="container">
             <div class="logo">
                 <i class="fas fa-cube"></i>
@@ -497,6 +508,11 @@
                         </div>
                     </div>
                 </div>
+
+                
+            </div>
+        </div>
+    </main>
             </div>
         </div>
     </main>
@@ -530,6 +546,7 @@
     <script src="../js/cursor.js"></script>
 <script src="../js/contextmenu.js"></script>
 <script src="../js/theme.js"></script>
+<script src="../js/memorial.js"></script>
 <script src="../js/script.js"></script>
 <script src="../js/setting.js"></script>
 </body>

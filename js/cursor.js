@@ -1,4 +1,22 @@
 // 自定义鼠标光标和粒子拖尾效果
+// Cookie操作函数
+function getCookie(name) {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+}
+
+function setCookie(name, value, days) {
+    const expires = new Date();
+    expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+    document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+}
+
 class CustomCursor {
     constructor() {
         this.isEnabled = true;
@@ -25,7 +43,7 @@ class CustomCursor {
         // 从cookie加载设置
         this.loadSettings();
         
-        console.log('初始化自定义光标 - 启用状态:', this.isEnabled, '粒子启用:', this.particlesEnabled);
+        
         
         // 如果启用，创建自定义光标
         if (this.isEnabled) {
@@ -43,8 +61,7 @@ class CustomCursor {
             this.cleanup();
         }
         
-        // 验证初始化后的状态
-        console.log('初始化完成 - 光标启用:', this.isEnabled, '粒子启用:', this.particlesEnabled);
+        
     }
 
     detectPC() {
@@ -54,15 +71,11 @@ class CustomCursor {
 
     loadSettings() {
         // 从cookie加载设置
-        const savedSettings = this.getCookie('customCursorSettings');
-        if (savedSettings) {
-            try {
-                const settings = JSON.parse(savedSettings);
-                // 直接从存储加载设置，严格判断布尔值
-                this.isEnabled = settings.enabled === true;
-                this.particlesEnabled = settings.particlesEnabled === true;
-                this.settings = { ...this.settings, ...settings };
-                console.log('从cookie加载设置:', settings);
+    const settings = getCookie('customCursorSettings');
+    if (settings) {
+        try {
+            const parsedSettings = JSON.parse(settings);
+            this.settings = { ...this.settings, ...parsedSettings };
             } catch (error) {
                 console.error('解析设置失败:', error);
                 // 默认设置 - 确保光标和粒子都开启
@@ -75,10 +88,7 @@ class CustomCursor {
             this.isEnabled = true;
             this.particlesEnabled = true;
             this.saveSettings();
-            console.log('使用默认设置并保存');
         }
-        
-        console.log('加载设置 - 光标启用:', this.isEnabled, '粒子启用:', this.particlesEnabled);
     }
 
     saveSettings() {
@@ -88,13 +98,6 @@ class CustomCursor {
             ...this.settings
         };
         this.setCookie('customCursorSettings', JSON.stringify(settings), 365);
-        console.log('保存设置到cookie:', settings);
-        
-        // 验证保存是否成功
-        setTimeout(() => {
-            const saved = this.getCookie('customCursorSettings');
-            console.log('验证保存的设置:', saved);
-        }, 100);
     }
 
     cleanup() {
@@ -150,6 +153,23 @@ class CustomCursor {
 
         // 鼠标移动事件
         document.addEventListener('mousemove', throttledMouseMove);
+        
+        // 添加滚动事件监听，确保光标位置正确
+        const throttledScroll = this.throttle(() => {
+            // 滚动时更新光标位置，确保跟随鼠标
+            if (this.cursor && this.lastMousePos.x > 0 && this.lastMousePos.y > 0) {
+                this.updateCursorPosition(this.lastMousePos.x, this.lastMousePos.y);
+            }
+        }, 16);
+        
+        window.addEventListener('scroll', throttledScroll);
+        
+        // 窗口大小改变时更新光标位置
+        window.addEventListener('resize', this.throttle(() => {
+            if (this.cursor && this.lastMousePos.x > 0 && this.lastMousePos.y > 0) {
+                this.updateCursorPosition(this.lastMousePos.x, this.lastMousePos.y);
+            }
+        }, 16));
 
         // 鼠标按下事件
         document.addEventListener('mousedown', () => {
@@ -210,6 +230,8 @@ class CustomCursor {
 
     updateCursorPosition(x, y) {
         if (this.cursor) {
+            // 由于CSS中使用了transform: translate(-50%, -50%)，需要调整位置
+            // 但可能存在偏移问题，所以我们直接设置精确位置
             this.cursor.style.left = x + 'px';
             this.cursor.style.top = y + 'px';
         }
@@ -248,7 +270,7 @@ class CustomCursor {
         // 初始化前一个鼠标位置
         this.prevMousePos = { ...this.lastMousePos };
         
-        console.log('粒子拖尾已启动');
+        
     }
 
     hideDefaultCursor() {
@@ -280,7 +302,7 @@ class CustomCursor {
             this.particleInterval = null;
         }
         
-        console.log('粒子拖尾已停止');
+        
     }
 
     createParticle(x, y) {
@@ -357,7 +379,9 @@ class CustomCursor {
         // 保存设置到cookie
         this.saveSettings();
         
-        console.log('光标已启用 - 启用状态:', this.isEnabled, '粒子启用:', this.particlesEnabled);
+        // 显示自定义光标
+        this.customCursor.style.display = 'block';
+        document.body.style.cursor = 'none';
     }
 
     disable() {
@@ -397,7 +421,9 @@ class CustomCursor {
         
         // 保存设置到cookie
         this.saveSettings();
-        console.log('光标已禁用 - 启用状态:', this.isEnabled, '粒子启用:', this.particlesEnabled);
+        // 隐藏自定义光标
+        this.customCursor.style.display = 'none';
+        document.body.style.cursor = '';
     }
 
     toggle() {
@@ -410,19 +436,12 @@ class CustomCursor {
 
     updateSettings(newSettings) {
         this.settings = { ...this.settings, ...newSettings };
-        this.saveSettings();
         
-        // 如果当前启用，重新应用设置
-        if (this.isEnabled) {
-            // 不需要完全禁用再启用，只需要更新粒子设置
-            if (this.particlesEnabled) {
-                // 重启粒子拖尾以应用新设置
-                this.stopParticleTrail();
-                this.startParticleTrail();
-            }
+        // 如果粒子正在运行，重启它们以应用新设置
+        if (this.particlesEnabled && this.particleInterval) {
+            this.stopParticleTrail();
+            this.startParticleTrail();
         }
-        
-        console.log('设置已更新:', this.settings);
     }
 
     getStatus() {

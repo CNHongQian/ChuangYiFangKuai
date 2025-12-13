@@ -10,15 +10,47 @@ let currentPage = 1;
 const buildingsItemsPerPage = 12;
 let filteredData = [];
 
+// 显示加载状态
+function showLoadingState() {
+    const grid = document.getElementById('buildingsGrid');
+    if (!grid) return;
+    
+    grid.innerHTML = '';
+    
+    // 创建骨架屏
+    for (let i = 0; i < 6; i++) {
+        const skeletonCard = document.createElement('div');
+        skeletonCard.className = 'skeleton-card';
+        skeletonCard.innerHTML = `
+            <div class="skeleton-image"></div>
+            <div class="skeleton-content">
+                <div class="skeleton-title"></div>
+                <div class="skeleton-text"></div>
+                <div class="skeleton-text"></div>
+            </div>
+        `;
+        grid.appendChild(skeletonCard);
+    }
+}
+
+// 隐藏加载状态
+function hideLoadingState() {
+    const skeletonCards = document.querySelectorAll('.skeleton-card');
+    skeletonCards.forEach(card => {
+        card.style.animation = 'fadeOut 0.3s ease-out';
+        setTimeout(() => card.remove(), 300);
+    });
+}
+
 // 加载建筑数据
 async function loadBuildingsData() {
-    console.log('开始加载建筑数据...');
+    // 显示加载状态
+    showLoadingState();
     
     // 只从GitHub加载数据
     try {
         // 添加时间戳防止缓存
         const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/content_data.json?t=' + Date.now();
-        console.log('尝试从GitHub加载数据:', githubUrl);
         
         // 添加超时控制
         const controller = new AbortController();
@@ -31,33 +63,19 @@ async function loadBuildingsData() {
         
         clearTimeout(timeoutId);
         
-        console.log('GitHub响应状态:', response.status, response.statusText);
-        
         if (!response.ok) {
             throw new Error(`GitHub请求失败: ${response.status} ${response.statusText}`);
         }
         
         const data = await response.json();
-        console.log('GitHub原始数据:', data);
-        console.log('数据总数:', data.length);
-        
-        // 统计各类别数量
-        const categoryStats = {};
-        data.forEach(item => {
-            const cat = item.category || 'unknown';
-            categoryStats[cat] = (categoryStats[cat] || 0) + 1;
-        });
-        console.log('分类统计:', categoryStats);
         
         if (data && data.length > 0) {
             // 处理content_data.json中的数据结构，添加缺失的默认值
             // 只保留建筑类型的数据
             buildingsPageData = data
                 .filter(item => {
-                    console.log('过滤项目:', item, 'category:', item.category, 'type:', item.type);
                     // 检查category值的确切类型
                     const isBuilding = item.category === 'building' || item.type === 'building';
-                    console.log('是否为建筑:', isBuilding, 'category值:', typeof item.category, 'category值:', item.category);
                     return isBuilding;
                 })
                 .map(item => ({
@@ -68,21 +86,21 @@ async function loadBuildingsData() {
                     views: item.views || 0
                 }));
             
-            console.log('从GitHub加载的建筑数据:', buildingsPageData);
-            
             if (buildingsPageData.length > 0) {
                 // 动态生成格式选项
                 generateFormatOptions();
                 
+                // 隐藏加载状态
+                hideLoadingState();
+                
                 // 确保数据加载完成后渲染
-                console.log('GitHub数据加载完成，开始渲染，数据量:', buildingsPageData.length);
                 renderBuildings();
                 return;
             } else {
-                console.log('GitHub数据中没有找到建筑类型的项目');
+                hideLoadingState();
             }
         } else {
-            console.log('GitHub数据为空');
+            hideLoadingState();
         }
     } catch (error) {
         if (error.name === 'AbortError') {
@@ -94,7 +112,9 @@ async function loadBuildingsData() {
     
     // 数据加载失败，保持空数组
     buildingsPageData = [];
-    console.log('数据加载失败，不显示任何内容');
+    
+    // 隐藏加载状态
+    hideLoadingState();
     
     // 仍然调用渲染函数以显示"没有找到相关建筑作品"消息
     renderBuildings();
@@ -113,7 +133,6 @@ async function loadTagsData() {
         
         const data = await response.json();
         tagsData = data.tags;
-        console.log('从GitHub加载的标签数据:', tagsData);
         
         // 生成过滤按钮
         generateFilterButtons();
@@ -178,8 +197,6 @@ function generateFormatOptions() {
     
     // 创建自定义下拉菜单
     createCustomDropdown('formatSelect', Array.from(formats).sort());
-    
-    console.log('生成的格式选项:', Array.from(formats));
 }
 
 // 创建自定义下拉菜单
@@ -283,13 +300,8 @@ function createCustomDropdown(selectId, formats) {
             originalSelect.value = selectedValue;
             originalSelect.selectedIndex = Array.from(originalSelect.options).findIndex(opt => opt.value === selectedValue);
             
-            console.log('自定义下拉菜单选择值:', selectedValue);
-            console.log('更新后的select元素值:', originalSelect.value);
-            console.log('select元素selectedIndex:', originalSelect.selectedIndex);
-            
             // 直接调用格式筛选处理函数
             buildingsCurrentFormatFilter = selectedValue;
-            console.log('直接设置格式筛选器为:', selectedValue);
             
             // 触发change事件
             const event = new Event('change', { bubbles: true });
@@ -334,11 +346,9 @@ async function loadSampleData() {
             throw new Error('无法加载示例数据文件');
         }
         const data = await response.json();
-        console.log('示例原始数据:', data);
         
         // 过滤出建筑类型的数据（sample_data.json使用type字段）
         buildingsPageData = data.filter(item => item.type === 'building');
-        console.log('过滤后的建筑示例数据:', buildingsPageData);
         
         // 确保数据有必要的字段
         buildingsPageData = buildingsPageData.map(item => ({
@@ -357,6 +367,11 @@ async function loadSampleData() {
 document.addEventListener('DOMContentLoaded', async function() {
     setupEventListeners();
     setupMobileMenu();
+    
+    // 初始化懒加载
+    initLazyLoading();
+    
+    
     
     // 加载标签数据
     await loadTagsData();
@@ -426,6 +441,143 @@ function setupEventListeners() {
     });
 }
 
+// 图片懒加载观察器
+let imageObserver = null;
+
+// 初始化图片懒加载
+function initLazyLoading() {
+    if ('IntersectionObserver' in window) {
+        imageObserver = new IntersectionObserver((entries, observer) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const img = entry.target;
+                    const src = img.dataset.src;
+                    
+                    if (src) {
+                        img.src = src;
+                        img.onload = () => {
+                            img.classList.add('loaded');
+                            img.classList.remove('loading');
+                        };
+                        img.classList.remove('lazy-image');
+                        observer.unobserve(img);
+                    }
+                }
+            });
+        }, {
+            rootMargin: '50px',
+            threshold: 0.1
+        });
+    }
+}
+
+// 检测WebP支持
+let webpSupported = false;
+(function checkWebPSupport() {
+    const webP = new Image();
+    webP.onload = webP.onerror = function() {
+        webpSupported = (webP.height === 2);
+    };
+    webP.src = 'data:image/webp;base64,UklGRjoAAABXRUJQVlA4IC4AAACyAgCdASoCAAIALmk0mk0iIiIiIgBoSygABc6WWgAA/veff/0PP8bA//LwYAAA';
+})();
+
+// 转换为WebP格式（如果支持）
+function getOptimizedImageUrl(originalSrc, isHighQuality = false) {
+    if (!originalSrc) {
+        return originalSrc;
+    }
+    
+    // 如果用户要求高质量，返回原始URL
+    if (isHighQuality) {
+        return originalSrc;
+    }
+    
+    // 对于GitHub/CDN图片，转换为WebP格式
+    if (originalSrc.includes('cdn.jsdelivr.net')) {
+        // 替换为WebP格式
+        if (originalSrc.includes('?')) {
+            return originalSrc + '&format=webp';
+        } else {
+            return originalSrc + '?format=webp';
+        }
+    }
+    
+    // 对于本地图片，保持原格式
+    return originalSrc;
+}
+
+// Cookie操作函数
+function getCookie(name) {
+    const nameEQ = name + "=";
+    const ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) === ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) === 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+}
+
+// 创建优化后的懒加载图片
+function createLazyImage(src, alt, className) {
+    const img = document.createElement('img');
+    img.className = `lazy-image loading ${className}`;
+    img.alt = alt;
+    
+    // 获取优化后的图片URL
+    const optimizedSrc = getOptimizedImageUrl(src);
+    img.dataset.src = optimizedSrc;
+    img.dataset.originalSrc = src; // 保存原始URL作为备用
+    
+    if (imageObserver) {
+        imageObserver.observe(img);
+    } else {
+        // 降级处理：直接加载图片
+        img.src = optimizedSrc;
+        img.onload = () => {
+            img.classList.add('loaded');
+            img.classList.remove('loading');
+        };
+        img.onerror = () => {
+            // 如果WebP加载失败，尝试原始格式
+            if (optimizedSrc !== src) {
+                img.src = src;
+                img.onload = () => {
+                    img.classList.add('loaded');
+                    img.classList.remove('loading');
+                };
+            } else {
+                // 如果原始格式也失败，使用默认图片
+                img.src = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/img/none.png';
+                img.onload = () => {
+                    img.classList.add('loaded');
+                    img.classList.remove('loading');
+                };
+            }
+        };
+    }
+    
+    return img;
+}
+
+// 图片压缩服务（可选功能）
+function compressImage(imgElement, quality = 0.8) {
+    return new Promise((resolve) => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = imgElement.naturalWidth;
+        canvas.height = imgElement.naturalHeight;
+        
+        ctx.drawImage(imgElement, 0, 0);
+        
+        canvas.toBlob((blob) => {
+            const compressedUrl = URL.createObjectURL(blob);
+            resolve(compressedUrl);
+        }, `image/webp`, quality);
+    });
+}
+
 // 更新作品计数
 function updateWorkCount() {
     const workCountElement = document.getElementById('workCount');
@@ -445,8 +597,6 @@ function renderBuildings() {
     }
     
     grid.innerHTML = '';
-    
-    console.log('当前建筑数据:', buildingsPageData);
     
     // 应用过滤和搜索
     filteredData = [...buildingsPageData];
@@ -469,18 +619,9 @@ function renderBuildings() {
     
     // 应用格式筛选
     if (buildingsCurrentFormatFilter !== 'all') {
-        console.log('筛选前数据量:', filteredData.length);
-        console.log('选择的格式:', buildingsCurrentFormatFilter);
-        
-        // 显示所有可用的格式
-        const availableFormats = [...new Set(filteredData.map(item => item.fileFormat).filter(Boolean))];
-        console.log('可用格式:', availableFormats);
-        
         filteredData = filteredData.filter(item => 
             item.fileFormat && item.fileFormat.toLowerCase() === buildingsCurrentFormatFilter.toLowerCase()
         );
-        
-        console.log('筛选后数据量:', filteredData.length);
     }
     
     // 应用搜索
@@ -537,7 +678,7 @@ function renderPaginatedItems() {
     const endIndex = startIndex + buildingsItemsPerPage;
     const itemsToDisplay = filteredData.slice(startIndex, endIndex);
     
-    console.log('要显示的数据:', itemsToDisplay);
+    
     
     if (itemsToDisplay.length === 0) {
         grid.innerHTML = '<div style="text-align: center; padding: 3rem; color: #666; grid-column: 1 / -1; width: 100%; display: flex; justify-content: center; align-items: center;">没有找到相关建筑作品</div>';
@@ -634,7 +775,7 @@ function goToPage(pageNum) {
 // 创建建筑卡片
 function createBuildingCard(building) {
     const card = document.createElement('div');
-    card.className = 'building-card';
+    card.className = 'building-card card-hover-effect fade-in';
     
     const cardInner = document.createElement('div');
     cardInner.onclick = () => goToDetail(building);
@@ -652,8 +793,13 @@ function createBuildingCard(building) {
         }
     }
     
+    // 创建懒加载图片
+    const img = createLazyImage(imagePath, building.title, 'building-image');
+    
+    // 标记是否使用WebP格式
+    const isWebPOptimized = webpSupported && imagePath !== 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/img/none.png';
+    
     cardInner.innerHTML = `
-        <img src="${imagePath}" alt="${building.title}" class="building-image" onerror="this.src='https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/img/none.png'">
         <div class="building-info">
             <h3 class="building-title">${building.title}</h3>
             <p class="building-author">作者: ${building.author || '未知'}</p>
@@ -669,6 +815,17 @@ function createBuildingCard(building) {
             </div>
         </div>
     `;
+    
+    // 将图片插入到cardInner的开头
+    if (isWebPOptimized) {
+        // 如果使用WebP格式，创建图片容器并添加优化标识
+        const imageContainer = document.createElement('div');
+        imageContainer.className = 'image-optimized';
+        imageContainer.appendChild(img);
+        cardInner.insertBefore(imageContainer, cardInner.firstChild);
+    } else {
+        cardInner.insertBefore(img, cardInner.firstChild);
+    }
     
     // 添加分享按钮
     const shareBtn = document.createElement('button');
@@ -705,9 +862,6 @@ function handleSearch() {
 // 格式筛选处理
 function handleFormatFilter(event) {
     buildingsCurrentFormatFilter = event.target.value;
-    console.log('格式筛选触发，选择的格式:', buildingsCurrentFormatFilter);
-    console.log('事件目标:', event.target);
-    console.log('事件目标值:', event.target.value);
     renderBuildings();
 }
 

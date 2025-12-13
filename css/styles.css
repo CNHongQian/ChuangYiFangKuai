@@ -957,6 +957,227 @@ option {
     border: 1px solid var(--card-border);
 }
 
+/* 加载状态指示器 */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    grid-column: 1 / -1;
+    width: 100%;
+}
+
+.loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid var(--card-border);
+    border-top: 4px solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+}
+
+.loading-text {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    text-align: center;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 骨架屏加载效果 */
+.skeleton-card {
+    background: var(--card-bg);
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px var(--card-shadow);
+    border: 1px solid var(--card-border);
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+.skeleton-image {
+    width: 100%;
+    height: 200px;
+    background: linear-gradient(90deg, var(--card-border) 25%, var(--primary-light) 50%, var(--card-border) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+}
+
+.skeleton-content {
+    padding: 1.5rem;
+}
+
+.skeleton-title {
+    height: 24px;
+    background: linear-gradient(90deg, var(--card-border) 25%, var(--primary-light) 50%, var(--card-border) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-text {
+    height: 16px;
+    background: linear-gradient(90deg, var(--card-border) 25%, var(--primary-light) 50%, var(--card-border) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    width: 80%;
+}
+
+.skeleton-text:last-child {
+    width: 60%;
+}
+
+@keyframes skeleton-loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+@keyframes skeleton-pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.7;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* 图片懒加载样式 */
+.lazy-image {
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    will-change: opacity, transform;
+}
+
+.lazy-image.loaded {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.lazy-image.loading {
+    background: linear-gradient(90deg, var(--card-border) 25%, var(--primary-light) 50%, var(--card-border) 75%);
+    background-size: 200% 100%;
+    animation: skeleton-loading 1.5s infinite;
+    transform: scale(0.98);
+}
+
+
+
+/* 图片加载失败样式 */
+.lazy-image.error {
+    opacity: 0.5;
+    filter: grayscale(100%);
+}
+
+/* 图片容器优化 */
+.building-image,
+.tool-image,
+.music-image,
+.command-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    object-position: center;
+    aspect-ratio: 16/9;
+    transition: transform 0.3s ease;
+}
+
+.building-image:hover,
+.tool-image:hover,
+.music-image:hover,
+.command-image:hover {
+    transform: scale(1.05);
+}
+
+/* 平滑过渡动画 */
+.fade-in {
+    animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+.slide-up {
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 微交互效果 */
+.card-hover-effect {
+    transition: all var(--transition-speed) ease;
+}
+
+.card-hover-effect:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 15px 40px var(--card-hover-shadow);
+}
+
+.button-hover-effect {
+    transition: all var(--transition-speed) ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.button-hover-effect::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.button-hover-effect:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+
+
 .view-options {
     display: flex;
     gap: 10px;
@@ -2225,7 +2446,7 @@ option {
     border: none !important;
     pointer-events: none;
     z-index: 10002;
-    transform: translate(-50%, -50%);
+    transform: translate(-16px, -16px);
     transition: transform 0.1s ease-out;
     display: block !important;
     visibility: visible !important;
@@ -2234,12 +2455,12 @@ option {
 
 /* 鼠标光标悬停效果 */
 .custom-cursor.hover {
-    transform: translate(-50%, -50%) scale(1.2);
+    transform: translate(-16px, -16px) scale(1.2);
     background: radial-gradient(circle, var(--primary-color) 0%, var(--primary-color) 30%, transparent 60%) !important;
 }
 
 .custom-cursor.click {
-    transform: translate(-50%, -50%) scale(0.8);
+    transform: translate(-16px, -16px) scale(0.8);
 }
 
 /* 鼠标光标在按钮上悬停效果 - 直接选择器 */
@@ -2265,14 +2486,14 @@ body.custom-cursor-enabled .card-share-btn:hover .custom-cursor {
 
 /* 鼠标光标按钮悬停类 */
 .custom-cursor.button-hover {
-    transform: translate(-50%, -50%) scale(1.3);
+    transform: translate(-16px, -16px) scale(1.3);
     background: radial-gradient(circle, var(--primary-color) 0%, var(--primary-color) 50%, rgba(255, 105, 180, 0) 100%) !important;
     box-shadow: 0 0 15px var(--primary-color);
 }
 
 /* 鼠标光标链接悬停类 */
 .custom-cursor.link-hover {
-    transform: translate(-50%, -50%) scale(1.25);
+    transform: translate(-16px, -16px) scale(1.25);
     background: radial-gradient(circle, var(--primary-color) 0%, var(--primary-color) 50%, rgba(255, 105, 180, 0) 100%) !important;
 }
 
@@ -2611,4 +2832,151 @@ body.custom-cursor-enabled .slider {
 [data-theme="dark"] .custom-context-menu {
     background: rgba(30, 30, 30, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 纪念日导航栏样式 */
+.memorial-nav {
+    background: linear-gradient(90deg, #808080, #606060);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    position: relative;
+    z-index: 100;
+    width: 100%;
+    left: 0;
+    right: 0;
+}
+
+.memorial-nav-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 20px;
+    gap: 15px;
+    width: 100%;
+    max-width: 100%;
+    margin: 0 auto;
+    position: relative;
+}
+
+.memorial-flag {
+    color: #ffffff;
+    font-size: 18px;
+    opacity: 0.9;
+    flex-shrink: 0;
+}
+
+.memorial-title {
+    color: #ffffff;
+    font-size: 18px;
+    font-weight: 600;
+    text-align: center;
+    letter-spacing: 1px;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding: 0 10px;
+}
+
+/* 纪念日导航栏动画 */
+.memorial-nav {
+    animation: memorialNavSlide 0.5s ease-out;
+}
+
+@keyframes memorialNavSlide {
+    from {
+        transform: translateY(-100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* 纪念日主题下的导航栏调整 */
+.memorial-nav .memorial-flag {
+    animation: flagWave 2s ease-in-out infinite;
+}
+
+@keyframes flagWave {
+    0%, 100% {
+        transform: rotate(0deg);
+    }
+    25% {
+        transform: rotate(-5deg);
+    }
+    75% {
+        transform: rotate(5deg);
+    }
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .memorial-nav-content {
+        padding: 8px 15px;
+        gap: 10px;
+    }
+    
+    .memorial-title {
+        font-size: 16px;
+        letter-spacing: 0.5px;
+        padding: 0 8px;
+    }
+    
+    .memorial-flag {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .memorial-nav-content {
+        padding: 6px 10px;
+        gap: 8px;
+    }
+    
+    .memorial-title {
+        font-size: 14px;
+        letter-spacing: 0.3px;
+        padding: 0 5px;
+    }
+    
+    .memorial-flag {
+        font-size: 14px;
+    }
+}
+
+@media (max-width: 360px) {
+    .memorial-nav-content {
+        padding: 5px 8px;
+        gap: 6px;
+    }
+    
+    .memorial-title {
+        font-size: 12px;
+        padding: 0 3px;
+    }
+    
+    .memorial-flag {
+        font-size: 12px;
+    }
+}
+
+/* 确保纪念日导航栏在移动端菜单展开时也能正确显示 */
+@media (max-width: 768px) {
+    .nav.active {
+        top: 0 !important;
+    }
+    
+    /* 纪念日导航栏在移动端始终显示在最前面 */
+    .memorial-nav {
+        z-index: 1001;
+    }
+    
+    /* 确保纪念日导航栏在移动端菜单展开时仍然可见 */
+    .nav.active ~ .memorial-nav,
+    .memorial-nav ~ .nav.active {
+        position: relative;
+        z-index: 1001;
+    }
 }

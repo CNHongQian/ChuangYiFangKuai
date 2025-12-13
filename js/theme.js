@@ -2,10 +2,15 @@
 class ThemeManager {
     constructor() {
         this.currentTheme = localStorage.getItem('theme') || 'light';
+        this.isMemorialDay = false;
+        this.memorialDayInfo = null;
         this.init();
     }
 
     init() {
+        // 检查是否是纪念日
+        this.checkMemorialDay();
+        
         // 设置初始主题
         this.setTheme(this.currentTheme);
         
@@ -90,6 +95,12 @@ class ThemeManager {
     }
 
     setTheme(theme) {
+        // 如果是纪念日，不允许更改主题
+        if (this.isMemorialDay && theme !== 'memorial') {
+            this.showNotification('今天是纪念日，主题已自动设置为灰白模式', 'info');
+            return;
+        }
+        
         // 移除所有主题类
         document.documentElement.removeAttribute('data-theme');
         
@@ -223,6 +234,236 @@ class ThemeManager {
     // 获取当前主题
     getCurrentTheme() {
         return this.currentTheme;
+    }
+
+    // 检查是否是纪念日
+    checkMemorialDay() {
+        const today = new Date();
+        const month = today.getMonth() + 1; // 月份从0开始
+        const day = today.getDate();
+        
+        // 纪念日配置
+        const memorialDays = [
+            { month: 12, day: 13, name: "南京大屠杀死难者国家公祭日" },
+            { month: 9, day: 30, name: "烈士纪念日" },
+            { month: 1, day: 27, name: "国际大屠杀纪念日" },
+            { month: 5, day: 12, name: "汶川地震遇难者纪念日" }
+        ];
+        
+        // 检查今天是否是纪念日
+        for (const memorial of memorialDays) {
+            if (memorial.month === month && memorial.day === day) {
+                this.isMemorialDay = true;
+                this.memorialDayInfo = memorial;
+                // 强制使用灰白主题
+                this.currentTheme = 'memorial';
+                this.setMemorialTheme(memorial.name);
+                
+                // 保存纪念日状态到本地存储
+                localStorage.setItem('isMemorialDay', 'true');
+                localStorage.setItem('memorialDayName', memorial.name);
+                return;
+            }
+        }
+        
+        // 如果不是纪念日，清除纪念日状态
+        this.isMemorialDay = false;
+        this.memorialDayInfo = null;
+        localStorage.removeItem('isMemorialDay');
+        localStorage.removeItem('memorialDayName');
+        
+        // 移除纪念日样式和横幅
+        this.removeMemorialTheme();
+    }
+
+    // 设置纪念日主题
+    setMemorialTheme(memorialName) {
+        // 创建纪念日主题样式
+        let memorialStyle = document.getElementById('memorial-theme-style');
+        if (!memorialStyle) {
+            memorialStyle = document.createElement('style');
+            memorialStyle.id = 'memorial-theme-style';
+            document.head.appendChild(memorialStyle);
+        }
+        
+        const memorialCSS = `
+            /* 纪念日灰白主题 */
+            :root {
+                --primary-color: #808080 !important;
+                --secondary-color: #606060 !important;
+                --accent-color: #404040 !important;
+                --primary-light: #f0f0f0 !important;
+                --primary-medium: #e0e0e0 !important;
+                --primary-dark: #d0d0d0 !important;
+                --text-primary: #333333 !important;
+                --text-secondary: #666666 !important;
+                --text-muted: #999999 !important;
+                --background-start: #f5f5f5 !important;
+                --background-25: #eeeeee !important;
+                --background-50: #e8e8e8 !important;
+                --background-75: #dddddd !important;
+                --background-end: #cccccc !important;
+                --card-bg: rgba(245, 245, 245, 0.95) !important;
+                --card-border: rgba(128, 128, 128, 0.3) !important;
+                --card-shadow: rgba(128, 128, 128, 0.2) !important;
+                --card-hover-shadow: rgba(128, 128, 128, 0.3) !important;
+            }
+            
+            /* 强制所有元素使用灰白主题 */
+            * {
+                color: inherit !important;
+            }
+            
+            body, html, .main, .background-animation {
+                background: #f5f5f5 !important;
+                background-color: #f5f5f5 !important;
+                background-image: none !important;
+                filter: grayscale(100%) !important;
+            }
+            
+            .logo h1,
+            .nav-link,
+            .hero-title,
+            .hero-subtitle,
+            .settings-header h1,
+            .settings-card h3,
+            .theme-name,
+            .color-input-group label,
+            .footer-section h4,
+            .footer-section p,
+            .footer-section li a {
+                color: #333333 !important;
+            }
+            
+            .gradient-text {
+                background: linear-gradient(45deg, #808080, #606060) !important;
+                -webkit-background-clip: text !important;
+                -webkit-text-fill-color: transparent !important;
+                background-clip: text !important;
+            }
+            
+            .btn-primary {
+                background: linear-gradient(45deg, #808080, #606060) !important;
+            }
+            
+            .btn-secondary {
+                background: #f5f5f5 !important;
+                border: 1px solid #808080 !important;
+                color: #333333 !important;
+            }
+            
+            .settings-card {
+                background: rgba(245, 245, 245, 0.95) !important;
+                border: 1px solid rgba(128, 128, 128, 0.3) !important;
+            }
+            
+            .theme-preset.active {
+                border-color: #808080 !important;
+            }
+            
+            .theme-preset.active::after {
+                background: #808080 !important;
+            }
+            
+            .nav-link.active::after,
+            .nav-link:hover::after {
+                background: #808080 !important;
+            }
+            
+            .hero {
+                background: linear-gradient(135deg, #f0f0f0, #e0e0e0) !important;
+            }
+            
+            /* 禁用所有彩色动画和效果 */
+            .background-decoration-1,
+            .background-decoration-2,
+            .background-decoration-3 {
+                display: none !important;
+            }
+            
+            .particle,
+            .cursor-glow {
+                display: none !important;
+            }
+        `;
+        
+        memorialStyle.textContent = memorialCSS;
+        
+        // 显示纪念日导航栏
+        this.showMemorialNav(memorialName);
+        
+        // 保存纪念日状态
+        this.isMemorialDay = true;
+        localStorage.setItem('isMemorialDay', 'true');
+        localStorage.setItem('memorialDayName', memorialName);
+    }
+
+    // 显示纪念日导航栏
+    showMemorialNav(memorialName) {
+        const memorialNav = document.getElementById('memorialNav');
+        const memorialTitle = document.getElementById('memorialTitle');
+        
+        if (memorialNav && memorialTitle) {
+            memorialTitle.textContent = memorialName;
+            memorialNav.style.display = 'block';
+        }
+    }
+
+    // 移除纪念日主题
+    removeMemorialTheme() {
+        // 移除纪念日样式
+        const memorialStyle = document.getElementById('memorial-theme-style');
+        if (memorialStyle) {
+            memorialStyle.parentNode.removeChild(memorialStyle);
+        }
+        
+        // 隐藏纪念日导航栏
+        const memorialNav = document.getElementById('memorialNav');
+        if (memorialNav) {
+            memorialNav.style.display = 'none';
+        }
+    }
+
+    // 显示通知
+    showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        
+        notification.style.cssText = `
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            z-index: 10001;
+            animation: slideIn 0.3s ease-out;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        `;
+        
+        switch (type) {
+            case 'success':
+                notification.style.background = 'linear-gradient(45deg, #28a745, #20c997)';
+                break;
+            case 'error':
+                notification.style.background = 'linear-gradient(45deg, #dc3545, #c82333)';
+                break;
+            default:
+                notification.style.background = 'linear-gradient(45deg, #808080, #606060)';
+        }
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease-out';
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
     }
 
     // 重置为默认主题
@@ -632,7 +873,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 监听主题变化事件
     document.addEventListener('themeChanged', (e) => {
-        console.log(`主题已切换到: ${e.detail.theme}`);
+        
         
         // 可以在这里添加主题切换后的额外逻辑
         // 例如更新图表颜色、重新渲染某些组件等
@@ -676,7 +917,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // 监听主题变化事件
     document.addEventListener('themeChanged', (e) => {
-        console.log(`主题已切换到: ${e.detail.theme}`);
+        
         
         // 可以在这里添加主题切换后的额外逻辑
         // 例如更新图表颜色、重新渲染某些组件等

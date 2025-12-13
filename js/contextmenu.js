@@ -11,6 +11,7 @@ class CustomContextMenu {
     init() {
         this.createMenu();
         this.bindEvents();
+        this.setupTextSelectionListener();
     }
 
     createMenu() {
@@ -121,9 +122,8 @@ class CustomContextMenu {
         // 保存选中的文本供复制使用
         this.savedSelection = selectedText;
         
-        console.log('检测到的选中文本:', `"${selectedText}"`, '长度:', selectedText.length);
-        
-        if (selectedText && selectedText.length > 0) {
+        // 显示或隐藏复制选项
+        if (selectedText.length > 0) {
             copyItem.style.display = 'flex';
         } else {
             copyItem.style.display = 'none';
@@ -139,6 +139,23 @@ class CustomContextMenu {
         } else {
             pasteItem.style.display = 'none';
         }
+    }
+
+    // 检测页面上的文本选择
+    setupTextSelectionListener() {
+        document.addEventListener('mouseup', () => {
+            const selectedText = window.getSelection().toString().trim();
+            
+            // 更新复制选项的显示状态
+            const copyItem = this.menu.querySelector('[data-action="copy"]');
+            if (copyItem) {
+                if (selectedText.length > 0) {
+                    copyItem.style.display = 'flex';
+                } else {
+                    copyItem.style.display = 'none';
+                }
+            }
+        });
     }
 
     executeAction(action) {
@@ -166,13 +183,11 @@ class CustomContextMenu {
         }, 300);
     }
 
+    // 复制选中的文本
     copySelectedText() {
-        // 使用保存的选中文本
-        let selectedText = this.savedSelection || '';
+        const selectedText = window.getSelection().toString().trim();
         
-        console.log('复制文本:', `"${selectedText}"`, '长度:', selectedText.length);
-        
-        if (selectedText && selectedText.length > 0) {
+        if (selectedText.length > 0) {
             // 先尝试现代API
             if (navigator.clipboard && navigator.clipboard.writeText) {
                 navigator.clipboard.writeText(selectedText).then(() => {

@@ -20,7 +20,10 @@ async function loadBuildingsData() {
             likes: item.likes || 0,
             views: item.views || 0
         }));
-        console.log('从GitHub加载数据成功:', buildingsData.length, '个作品');
+        if (data && data.length > 0) {
+            buildingsData = data;
+            renderBuildings();
+        }
     } catch (error) {
         console.error('从GitHub加载数据失败，尝试本地数据:', error);
         
@@ -38,7 +41,6 @@ async function loadBuildingsData() {
                 likes: item.likes || 0,
                 views: item.views || 0
             }));
-            console.log('从本地加载数据成功:', buildingsData.length, '个作品');
         } catch (localError) {
             console.error('本地数据也加载失败:', localError);
             // 如果都失败，使用默认数据
@@ -722,8 +724,6 @@ function getThemeVariables(themeId) {
 
 // 应用全局主题
 function applyGlobalTheme(theme) {
-    console.log('应用全局主题:', theme);
-    
     // 根据主题ID设置完整的主题变量
     const themeVariables = getThemeVariables(theme.id);
     
@@ -743,8 +743,6 @@ function applyGlobalTheme(theme) {
     
     // 设置空的CSS，让CSS变量生效
     dynamicStyle.textContent = '';
-    
-    console.log('全局主题应用完成');
 }
 
 // 页面加载时应用主题

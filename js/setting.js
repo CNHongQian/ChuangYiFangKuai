@@ -5,7 +5,6 @@ let currentTheme = null;
 
 // 初始化设置页面
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('设置页面加载完成');
     setupMobileMenu();
     setupNavigationLinks();
     renderThemePresets();
@@ -27,7 +26,6 @@ function setupNavigationLinks() {
     const freshNavLinks = document.querySelectorAll('.nav-link');
     freshNavLinks.forEach(link => {
         link.addEventListener('click', function(e) {
-            console.log('导航链接被点击:', this.href);
             window.location.href = this.href;
         });
     });
@@ -69,10 +67,42 @@ function renderThemePresets() {
     
     presetsContainer.innerHTML = '';
     
-    themePresets.forEach(preset => {
-        const presetElement = createPresetElement(preset);
-        presetsContainer.appendChild(presetElement);
-    });
+    // 检查是否是纪念日
+    const isMemorialDay = localStorage.getItem('isMemorialDay') === 'true';
+    const memorialDayName = localStorage.getItem('memorialDayName');
+    
+    if (isMemorialDay) {
+        // 如果是纪念日，显示禁用状态
+        const memorialMessage = document.createElement('div');
+        memorialMessage.style.cssText = `
+            text-align: center;
+            padding: 2rem;
+            background: rgba(128, 128, 128, 0.1);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        `;
+        memorialMessage.innerHTML = `
+            <i class="fas fa-flag" style="font-size: 2rem; color: #808080; margin-bottom: 1rem; display: block;"></i>
+            <h3 style="color: #333; margin-bottom: 0.5rem;">${memorialDayName}</h3>
+            <p style="color: #666;">今天是纪念日，主题已自动设置为灰白模式</p>
+        `;
+        presetsContainer.appendChild(memorialMessage);
+        
+        // 禁用所有主题选择
+        themePresets.forEach(preset => {
+            const presetElement = createPresetElement(preset);
+            presetElement.style.opacity = '0.5';
+            presetElement.style.pointerEvents = 'none';
+            presetElement.style.cursor = 'not-allowed';
+            presetsContainer.appendChild(presetElement);
+        });
+    } else {
+        // 正常渲染主题选择
+        themePresets.forEach(preset => {
+            const presetElement = createPresetElement(preset);
+            presetsContainer.appendChild(presetElement);
+        });
+    }
 }
 
 // 创建预设主题元素
@@ -102,6 +132,14 @@ function createPresetElement(preset) {
 
 // 选择预设主题
 function selectPreset(preset) {
+    // 检查是否是纪念日
+    const isMemorialDay = localStorage.getItem('isMemorialDay') === 'true';
+    
+    if (isMemorialDay) {
+        showNotification('今天是纪念日，主题已自动设置为灰白模式，无法更改', 'info');
+        return;
+    }
+    
     // 移除所有active类
     document.querySelectorAll('.theme-preset').forEach(el => {
         el.classList.remove('active');
@@ -124,7 +162,6 @@ function selectPreset(preset) {
 
 // 应用主题
 function applyTheme(theme) {
-    console.log('应用主题:', theme);
     
     // 设置CSS变量
     const root = document.documentElement;
@@ -432,7 +469,6 @@ function applyTheme(theme) {
         });
         
         document.body.style.display = '';
-        console.log('主题应用完成，背景颜色:', theme.background);
     }, 50);
 }
 
@@ -578,7 +614,6 @@ function setupMobileMenu() {
         const navLinks = navMenu.querySelectorAll('.nav-link');
         navLinks.forEach(link => {
             link.addEventListener('click', function(e) {
-                console.log('移动端菜单项被点击:', this.href);
                 navMenu.classList.remove('active');
                 const spans = menuBtn.querySelectorAll('span');
                 spans[0].style.transform = '';
@@ -631,7 +666,6 @@ function setupCursorSettings() {
     // 等待自定义光标初始化完成
     setTimeout(() => {
         if (!window.customCursor) {
-            console.log('自定义光标不可用');
             return;
         }
 
@@ -654,7 +688,6 @@ function setupCursorSettings() {
             }
             
             customCursorToggle.checked = cursorEnabled;
-            console.log('设置光标开关初始状态:', cursorEnabled);
             
             customCursorToggle.addEventListener('change', (e) => {
                 if (e.target.checked) {
@@ -683,12 +716,10 @@ function setupCursorSettings() {
             }
             
             particleTrailToggle.checked = particlesEnabled;
-            console.log('设置粒子拖尾开关初始状态:', particlesEnabled);
             
             particleTrailToggle.addEventListener('change', (e) => {
                 // 粒子拖尾开关状态改变
                 const isEnabled = e.target.checked;
-                console.log('粒子拖尾开关:', isEnabled);
                 
                 // 控制粒子效果
                 if (window.customCursor) {
@@ -795,8 +826,6 @@ function updateCursorSettings() {
     // 合并设置并保存
     const mergedSettings = { ...currentSettings, ...newSettings };
     setCookie('customCursorSettings', JSON.stringify(mergedSettings), 365);
-    
-    console.log('设置已更新并保存:', mergedSettings);
 }
 
 // 更新粒子设置的可见性
@@ -826,8 +855,6 @@ function updateParticleSettingsVisibility() {
     if (particleControls) {
         particleControls.style.display = cursorEnabled ? 'grid' : 'none';
     }
-    
-    console.log('粒子设置可见性已更新，光标启用:', cursorEnabled);
 }
 
 // Cookie操作方法
@@ -851,3 +878,4 @@ function getCookie(name) {
 function deleteCookie(name) {
     document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`;
 }
+

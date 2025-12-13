@@ -6,6 +6,7 @@ let imageScale = 1;
 let isDragging = false;
 let startX, startY, scrollLeft, scrollTop;
 let tagsData = []; // 存储标签数据
+let isHighQuality = false; // 图片质量状态
 
 // 初始化详情页面
 document.addEventListener('DOMContentLoaded', async function() {
@@ -36,7 +37,6 @@ function setupNavigationLinks() {
     const freshNavLinks = document.querySelectorAll('.nav-link');
     freshNavLinks.forEach(link => {
         link.addEventListener('click', function(e) {
-            console.log('导航链接被点击:', this.href);
             // 确保链接可以正常跳转
             window.location.href = this.href;
         });
@@ -55,8 +55,7 @@ async function loadTagsData() {
         }
         
         const data = await response.json();
-        tagsData = data.tags;
-        console.log('详情页面从GitHub加载的标签数据:', tagsData);
+        tagsData = data.tags || [];
     } catch (error) {
         console.error('从GitHub加载标签数据失败:', error);
         tagsData = [];
@@ -82,7 +81,7 @@ async function loadBuildingsData() {
     try {
         // 尝试从GitHub仓库加载数据，添加时间戳防止缓存
         const githubUrl = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/data/content_data.json?t=' + Date.now();
-        console.log('详情页面尝试从GitHub加载数据:', githubUrl);
+        
         
         // 添加超时控制
         const controller = new AbortController();
@@ -95,15 +94,14 @@ async function loadBuildingsData() {
         
         clearTimeout(timeoutId);
         
-        console.log('详情页面GitHub响应状态:', response.status, response.statusText);
+        
         
         if (!response.ok) {
             throw new Error(`GitHub请求失败: ${response.status} ${response.statusText}`);
         }
         
         const data = await response.json();
-        console.log('详情页面GitHub原始数据:', data);
-        console.log('详情页面数据总数:', data.length);
+        
         
         if (data && data.length > 0) {
             // 处理数据结构，添加缺失的默认值
@@ -114,7 +112,7 @@ async function loadBuildingsData() {
                 likes: item.likes || 0,
                 views: item.views || 0
             }));
-            console.log('详情页面从GitHub加载数据成功:', buildingsData.length, '个作品');
+            
             return;
         }
     } catch (error) {
@@ -138,7 +136,7 @@ async function loadBuildingsData() {
                 likes: item.likes || 0,
                 views: item.views || 0
             }));
-            console.log('详情页面从本地加载数据成功:', buildingsData.length, '个作品');
+            
         } catch (localError) {
             console.error('详情页面本地数据也加载失败:', localError);
             buildingsData = [];
@@ -235,7 +233,7 @@ function displayWorkDetail() {
             coverImagePath = currentWork.coverImage;
         }
     }
-    mainImage.src = coverImagePath;
+    mainImage.src = getOptimizedImageUrl(coverImagePath, false);
     mainImage.alt = currentWork.title;
     mainImage.onerror = function() {
         this.src = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/img/none.png';
@@ -285,7 +283,7 @@ function generateThumbnails() {
             }
         }
         
-        thumbnail.src = thumbnailSrc;
+        thumbnail.src = getOptimizedImageUrl(thumbnailSrc, false);
         thumbnail.alt = `${currentWork.title} - 图片 ${index + 1}`;
         thumbnail.className = 'thumbnail';
         if (index === 0) {
@@ -296,7 +294,7 @@ function generateThumbnails() {
         thumbnail.addEventListener('click', function() {
             // 更新主图，使用处理后的路径
             const mainImage = document.getElementById('mainImage');
-            mainImage.src = thumbnailSrc;
+            mainImage.src = getOptimizedImageUrl(thumbnailSrc, isHighQuality);
             currentImageIndex = index;
             
             // 更新活动状态
@@ -371,9 +369,7 @@ function createRelatedCard(work) {
     card.style.cursor = 'pointer';
     
     // 使用getTypeName函数正确显示类型
-    console.log('随机推荐作品类型:', work.type); // 调试日志
     const typeTag = getTypeName(work.type);
-    console.log('随机推荐类型标签:', typeTag); // 调试日志
     
     // 获取作品的标签
     const workTags = getWorkTags(work.tags);
@@ -411,7 +407,7 @@ function createRelatedCard(work) {
     }
     
     card.innerHTML = `
-        <img src="${workImagePath}" alt="${work.title}" class="building-image" onerror="this.src='https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/img/none.png'">
+        <img src="${getOptimizedImageUrl(workImagePath, false)}" alt="${work.title}" class="building-image" onerror="this.src='https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/img/none.png'">
         <div class="building-info">
             <h3 class="building-title">${work.title}</h3>
             <p class="building-author">作者: ${work.author}</p>
@@ -496,7 +492,7 @@ function downloadFile() {
             downloadFileName = currentWork.fileName;
         }
         
-        console.log('下载文件URL:', downloadUrl);
+        
         
         // 创建隐藏的下载链接
         const downloadLink = document.createElement('a');
@@ -524,7 +520,7 @@ function downloadFile() {
             // 添加下载统计（可选）
             if (currentWork.downloads !== undefined) {
                 currentWork.downloads++;
-                console.log(`下载次数: ${currentWork.downloads}`);
+                
                 // 更新显示的下载次数
                 const downloadsElement = document.getElementById('detailDownloads');
                 if (downloadsElement) {
@@ -641,7 +637,6 @@ function getCategoryName(category) {
 
 // 获取类型名称
 function getTypeName(type) {
-    console.log('getTypeName输入类型:', type); // 调试日志
     const typeMap = {
         'building': '建筑',
         'tool': '工具',
@@ -649,7 +644,7 @@ function getTypeName(type) {
         'command': '指令'
     };
     const result = typeMap[type] || '其他';
-    console.log('getTypeName返回结果:', result); // 调试日志
+    
     return result;
 }
 
@@ -695,7 +690,7 @@ function setupMobileMenu() {
         navLinks.forEach(link => {
             link.addEventListener('click', function(e) {
                 // 允许正常跳转，只关闭移动菜单
-                console.log('移动端菜单项被点击:', this.href);
+                
                 navMenu.classList.remove('active');
                 const spans = menuBtn.querySelectorAll('span');
                 spans[0].style.transform = '';
@@ -911,3 +906,66 @@ document.getElementById('modalImage').addEventListener('wheel', function(e) {
     
     updateImageTransform();
 }, { passive: false });
+
+// 图片优化函数
+function getOptimizedImageUrl(originalSrc, isHighQuality = false) {
+    if (!originalSrc) {
+        return originalSrc;
+    }
+    
+    // 如果用户要求高质量，返回原始URL
+    if (isHighQuality) {
+        return originalSrc;
+    }
+    
+    // 对于GitHub/CDN图片，转换为WebP格式
+    if (originalSrc.includes('cdn.jsdelivr.net')) {
+        // 替换为WebP格式
+        if (originalSrc.includes('?')) {
+            return originalSrc + '&format=webp';
+        } else {
+            return originalSrc + '?format=webp';
+        }
+    }
+    
+    // 对于本地图片，保持原格式
+    return originalSrc;
+}
+
+// 切换图片格式
+function toggleImageQuality() {
+    isHighQuality = !isHighQuality;
+    const toggleBtn = document.getElementById('qualityToggleBtn');
+    const mainImage = document.getElementById('mainImage');
+    
+    // 处理图片路径，使用CDN地址
+    let imagePath = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/img/none.png'; // 默认图片
+    if (currentWork.image && currentWork.image.trim() !== '') {
+        // 如果是相对路径，添加CDN前缀
+        if (!currentWork.image.startsWith('http')) {
+            imagePath = 'https://cdn.jsdelivr.net/gh/CNHongQian/ChuangYiFangKuai@main/' + currentWork.image;
+        } else {
+            imagePath = currentWork.image;
+        }
+    }
+    
+    if (isHighQuality) {
+        // 切换到原图
+        toggleBtn.classList.add('high-quality');
+        toggleBtn.innerHTML = '<i class="fas fa-compress"></i><span>查看WebP</span>';
+        mainImage.src = imagePath;
+    } else {
+        // 切换到WebP
+        toggleBtn.classList.remove('high-quality');
+        toggleBtn.innerHTML = '<i class="fas fa-compress"></i><span>查看原图</span>';
+        mainImage.src = getOptimizedImageUrl(imagePath, false);
+    }
+    
+    // 更新缩略图
+    updateThumbnails();
+}
+
+// 更新缩略图
+function updateThumbnails() {
+    generateThumbnails();
+}
